@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ilustrador AIL + Presentación Familiar</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+<style>
+:root{
+  --blue:#00558C;--blue2:#003F69;--green:#098A1D;--orange:#F78E1E;
+  --bg:#E9EEF3;--panel:#fff;--soft:#F5F8FA;--line:#D2DCE4;
+  --text:#16202B;--muted:#62727E;--warm:#B76F2D;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif}
+button,input,select,textarea{font:inherit}
+.shell{display:grid;grid-template-columns:390px minmax(0,1fr);min-height:100vh}
+.rail{background:#fff;border-right:1px solid var(--line);height:100vh;position:sticky;top:0;display:flex;flex-direction:column}
+.rail-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;gap:11px}
+.mark{width:38px;height:38px;border-radius:8px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800}
+.rail-head h1{font:700 20px "Source Serif 4",serif;margin:0}
+.rail-head p{margin:2px 0 0;color:var(--muted);font-size:12px}
+.rail-body{overflow:auto;padding:4px 20px 20px;flex:1}
+.sect{padding:15px 0;border-bottom:1px solid #E7EDF1}
+.sect h3{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:#7A8993;margin:0 0 10px}
+.grid{display:grid;gap:9px}.g2{grid-template-columns:1fr 1fr}
+label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+input,select,textarea{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:7px;background:var(--soft);color:var(--text)}
+textarea{resize:vertical;min-height:54px}
+.cover{border:1px solid var(--line);border-radius:9px;margin:8px 0;overflow:hidden}
+.cover.on{border-color:var(--blue);box-shadow:inset 3px 0 0 var(--blue)}
+.cover-head{padding:10px 11px;display:flex;gap:8px;align-items:center;cursor:pointer}
+.cover-head b{font-size:13px}.cover-head small{margin-left:auto;color:#84929B}
+.cover-body{display:none;padding:11px;border-top:1px solid #E6ECF0;background:#FCFDFE}
+.cover.on .cover-body{display:block}
+.chk{width:auto;accent-color:var(--blue)}
+.rail-foot{padding:13px 20px;background:var(--soft);border-top:1px solid var(--line);display:grid;gap:8px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px 12px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:white}
+.btn.present{background:linear-gradient(135deg,#0B6FA4,var(--blue2));border-color:var(--blue);color:white}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stage{padding:26px;overflow:auto}
+.preview-top{max-width:8.5in;margin:0 auto 14px;display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
+.doc{width:8.5in;margin:auto;background:white;min-height:11in;box-shadow:0 12px 32px rgba(24,45,60,.12)}
+.band{background:var(--blue);color:#fff;padding:16px .6in;display:flex;justify-content:space-between}
+.band .co{font:700 20px "Source Serif 4",serif}.band small{display:block;font:400 9px "IBM Plex Sans";letter-spacing:2px;margin-top:3px}
+.paper{padding:.45in .62in .58in}
+.paper h1{font:700 30px "Source Serif 4",serif;color:var(--blue);margin:0 0 6px}
+.paper .sub{color:var(--muted);margin-bottom:18px}
+.clientbox{background:#EAF3F8;border-left:4px solid var(--blue);padding:14px 16px;border-radius:0 10px 10px 0;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.lbl{font-size:9px;text-transform:uppercase;color:#7D8A92;letter-spacing:1px}.val{font-weight:700;color:var(--blue);margin-top:2px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.card{border:1px solid #D8E0E5;border-top:4px solid var(--blue);border-radius:10px;padding:14px}
+.card.life{border-top-color:var(--green)}
+.card .kick{text-transform:uppercase;color:#839099;font-size:9px;letter-spacing:1px}
+.card h3{font:700 18px "Source Serif 4",serif;color:var(--blue);margin:4px 0}
+.card .form{color:#7C8991;font-size:11px;margin-bottom:8px}
+.card ul{padding-left:17px;margin:8px 0 0;line-height:1.5;font-size:12px}
+.summary{margin-top:20px;background:#F5F8FA;border:1px solid #DDE5E9;border-radius:10px;padding:15px;display:flex;justify-content:space-between;align-items:center}
+.summary b{font-size:28px;color:var(--blue)}
+.disclaimer{margin-top:20px;color:#7A878F;font-size:9.5px;line-height:1.45}
+
+/* presentation */
+#pres{display:none;position:fixed;inset:0;z-index:9999;background:#F8F5EF;color:#20303A}
+#pres.on{display:flex;flex-direction:column}
+.p-top{height:62px;background:rgba(255,255,255,.9);border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center;padding:0 22px;gap:12px}
+.p-brand{font-weight:800;color:#244A60}.p-client{font-size:13px;color:#76868E}.sp{flex:1}
+.dots{display:flex;gap:6px}.dot{width:7px;height:7px;border-radius:20px;background:#CBD6DB}.dot.on{width:25px;background:#D68D47}
+.close{border:1px solid #D9E0E3;background:#fff;border-radius:9px;padding:8px 10px;cursor:pointer}
+.p-stage{position:relative;flex:1;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:clamp(26px,5vw,70px);opacity:0;transform:translateX(32px);pointer-events:none;transition:.3s;overflow:auto}
+.slide.on{opacity:1;transform:none;pointer-events:auto}
+.slide:nth-child(odd){background:radial-gradient(circle at 8% 10%,rgba(234,186,128,.20),transparent 29%),#F8F5EF}
+.slide:nth-child(even){background:radial-gradient(circle at 92% 10%,rgba(0,85,140,.08),transparent 28%),#FCFBF8}
+.wrap{width:min(1120px,100%);margin:auto}
+.kicker{text-transform:uppercase;letter-spacing:1.7px;font-weight:800;color:var(--warm);font-size:12px;margin-bottom:12px}
+.title{font:700 clamp(39px,5.4vw,76px)/1.04 "Source Serif 4",serif;color:#173D52;margin:0 0 20px;letter-spacing:-1.2px}
+.title .warm{color:var(--warm)}.title .blue{color:var(--blue)}
+.lead{max-width:850px;color:#5E7079;font-size:clamp(17px,2vw,24px);line-height:1.55}
+.family{display:flex;flex-wrap:wrap;gap:15px;margin-top:25px}
+.person{background:#fff;border:1px solid #E5E3DC;border-radius:22px;padding:21px;min-width:145px;flex:1 1 145px;text-align:center;box-shadow:0 12px 30px rgba(44,66,77,.06)}
+.face{width:62px;height:62px;border-radius:50%;margin:auto auto 10px;background:linear-gradient(145deg,#E8F1F4,#F7E8D7);display:grid;place-items:center;font-size:12px;font-weight:800;letter-spacing:.6px;color:#315365}
+.person b{display:block;color:#274D61}.person small{color:#87949B}
+.q{background:#fff;border-left:5px solid #D68D47;border-radius:0 18px 18px 0;padding:21px 24px;margin:13px 0;font:600 clamp(19px,2.2vw,29px) "Source Serif 4",serif;color:#294B5D;box-shadow:0 10px 28px rgba(44,66,77,.05)}
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;margin-top:24px}
+.plan{background:#fff;border:1px solid #E1E5E3;border-radius:21px;padding:21px;position:relative;overflow:hidden}
+.plan:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#6DAA9C}.plan.life:before{background:#D68D47}
+.plan h3{font:700 21px "Source Serif 4",serif;color:#244A60;margin:4px 0}.plan .form{font-size:12px;color:#859197}
+.plan ul{padding-left:18px;color:#52656F;line-height:1.5}
+.focus{display:grid;grid-template-columns:.72fr 1.28fr;gap:30px;align-items:center}
+.focusbox{min-height:330px;border-radius:31px;background:linear-gradient(145deg,#173D52,#00558C);color:#fff;padding:32px;display:flex;flex-direction:column;justify-content:flex-end;box-shadow:0 24px 60px rgba(0,85,140,.2)}
+.symbol{font-size:60px;margin-bottom:auto}.focusbox .fk{text-transform:uppercase;font-size:10px;letter-spacing:1.5px;opacity:.75}.focusbox .fn{font:700 34px/1.08 "Source Serif 4",serif;margin-top:5px}
+.benefits{display:grid;gap:11px}.benefit{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid #E5E5DF;border-radius:15px;padding:14px 16px;color:#4D626B}
+.check{flex:none;width:25px;height:25px;border-radius:50%;background:#E6F2EE;color:#237A66;display:grid;place-items:center;font-weight:900}
+.premium{display:flex;align-items:flex-end;gap:15px;margin-top:17px}.amount{font:700 clamp(60px,8vw,104px)/.9 "Source Serif 4",serif;color:var(--blue);letter-spacing:-2px}.mode{padding-bottom:9px;color:#75858C;font-size:17px}
+.final{background:linear-gradient(145deg,#173D52,#244F66);color:#fff;border-radius:34px;padding:clamp(30px,5vw,58px);box-shadow:0 25px 65px rgba(23,61,82,.22)}
+.final .title{color:#fff}.final .lead{color:#D7E3E8}.finalq{margin-top:28px;padding:19px 21px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.09);border-radius:17px;font:600 clamp(19px,2vw,26px) "Source Serif 4",serif}
+.p-note{font-size:12px;color:#85939A;line-height:1.5;margin-top:18px}
+.p-foot{height:68px;background:#fff;border-top:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:10px;padding:10px 22px}
+.p-foot .help{margin:auto;color:#8B989E;font-size:12px}.pbtn{border:1px solid #D6DFE3;background:#fff;color:#315365;border-radius:11px;padding:10px 14px;font-weight:800;cursor:pointer}.pbtn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+@media(max-width:900px){.shell{grid-template-columns:1fr}.rail{height:auto;position:static}.stage{padding:12px}.doc{transform-origin:top left}.cards,.clientbox,.focus{grid-template-columns:1fr}.slide{align-items:flex-start;padding:24px 18px}.p-client,.help{display:none}}
+@media print{.rail,.preview-top{display:none}.shell{display:block}.stage{padding:0}.doc{box-shadow:none}}
+
+/* ====== Resumen de valor familiar ====== */
+.family-value{
+  margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px
+}
+.valuebox{
+  border:1px solid #D8E2E7;background:#FAFCFD;border-radius:11px;padding:14px
+}
+.valuebox .vlabel{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#7D8A92}
+.valuebox .vbig{font:700 24px "Source Serif 4",serif;color:var(--blue);margin-top:4px}
+.valuebox .vsmall{font-size:10px;color:#74838C;line-height:1.4;margin-top:4px}
+
+.p-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:25px}
+.p-metric{
+  background:#fff;border:1px solid #E3E6E4;border-radius:20px;padding:20px;
+  box-shadow:0 12px 30px rgba(44,66,77,.05)
+}
+.p-metric .mk{font-size:10px;text-transform:uppercase;letter-spacing:1.3px;color:#849299;font-weight:800}
+.p-metric .mv{font:700 clamp(27px,3.5vw,44px) "Source Serif 4",serif;color:#00558C;margin:5px 0}
+.p-metric .md{font-size:13px;color:#6C7C84;line-height:1.45}
+.compare-card{
+  margin-top:22px;background:#FFF8ED;border:1px solid #EFD8B8;border-radius:18px;padding:18px 20px;
+  color:#5E4A34;font-size:16px;line-height:1.5
+}
+.compare-card strong{color:#B76F2D}
+@media(max-width:820px){
+  .family-value,.p-metrics{grid-template-columns:1fr}
+}
+
+
+/* ====== V4: Familia, beneficiario y gran total ====== */
+.dynamic-list{display:grid;gap:7px;margin-top:8px}
+.dynamic-row{display:grid;grid-template-columns:1fr 34px;gap:7px}
+.dynamic-row button{
+  border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;color:#9B3B35
+}
+.add-mini{
+  margin-top:7px;width:100%;border:1px dashed #AABBC5;background:#F8FBFC;
+  border-radius:8px;padding:8px;cursor:pointer;color:#315365;font-weight:700
+}
+.total-hero{
+  text-align:center;padding:clamp(28px,5vw,60px);border-radius:36px;
+  background:linear-gradient(145deg,#12384D,#00558C 58%,#0B6FA4);
+  box-shadow:0 28px 75px rgba(0,85,140,.25);color:#fff
+}
+.total-hero .tk{
+  text-transform:uppercase;letter-spacing:2.3px;font-size:12px;
+  font-weight:800;color:#D8EDF6
+}
+.total-hero .tv{
+  font:700 clamp(72px,12vw,160px)/.88 "Source Serif 4",serif;
+  letter-spacing:-5px;margin:18px 0 16px;color:#fff;text-shadow:0 4px 25px rgba(0,0,0,.13)
+}
+.total-hero .ts{font-size:clamp(18px,2vw,25px);color:#DDECF2;max-width:850px;margin:auto;line-height:1.45}
+.total-breakdown{
+  margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px
+}
+.total-piece{
+  background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.17);
+  border-radius:17px;padding:15px;text-align:left
+}
+.total-piece small{display:block;color:#BFD6E1;font-size:10px;text-transform:uppercase;letter-spacing:1px}
+.total-piece b{display:block;font-size:22px;margin-top:4px}
+.total-piece span{display:block;font-size:11px;color:#CFE0E7;margin-top:3px;line-height:1.35}
+.family-names{
+  margin-top:18px;background:#fff;border:1px solid #E3E5E1;border-radius:18px;
+  padding:18px 20px;color:#50636C
+}
+.family-names b{color:#244A60}
+.beneficiary-box{
+  margin-top:16px;background:#EEF6F9;border:1px solid #D2E4EB;border-radius:17px;padding:16px 18px;
+  color:#45606D
+}
+.beneficiary-box strong{color:#00558C}
+
+
+/* ===== V7: página completa de comparación ===== */
+.compare-stage{
+  min-height:70vh;display:flex;flex-direction:column;justify-content:center
+}
+.compare-big{
+  font:700 clamp(70px,11vw,150px)/.9 "Source Serif 4",serif;
+  color:#00558C;letter-spacing:-4px;margin:12px 0
+}
+.compare-person{
+  font-size:clamp(22px,3vw,38px);color:#315365;font-weight:700
+}
+.compare-vs{
+  display:grid;grid-template-columns:1fr auto 1fr;gap:22px;align-items:center;
+  margin-top:34px
+}
+.compare-side{
+  background:#fff;border:1px solid #E2E6E4;border-radius:24px;padding:26px;
+  text-align:center;box-shadow:0 14px 36px rgba(44,66,77,.06)
+}
+.compare-side .num{
+  font:700 clamp(36px,5vw,64px) "Source Serif 4",serif;color:#173D52
+}
+.compare-side .desc{font-size:16px;color:#677A83;margin-top:5px}
+.compare-eq{font:700 30px "Source Serif 4",serif;color:#B76F2D}
+@media(max-width:760px){
+  .compare-vs{grid-template-columns:1fr}
+  .compare-eq{transform:rotate(90deg)}
+}
+
+
+/* ===== V8: comparación semanal protagonista ===== */
+.weekly-hero{
+  min-height:72vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center
+}
+.weekly-hero .wk-label{
+  font-size:13px;letter-spacing:2px;text-transform:uppercase;font-weight:800;color:#B76F2D
+}
+.weekly-hero .wk-value{
+  font:700 clamp(92px,15vw,190px)/.84 "Source Serif 4",serif;
+  color:#00558C;letter-spacing:-6px;margin:20px 0 12px
+}
+.weekly-hero .wk-sub{
+  font-size:clamp(24px,3.3vw,46px);font-weight:700;color:#274D61
+}
+.weekly-hero .wk-family{
+  margin-top:12px;font-size:17px;color:#74858D
+}
+.weekly-compare{
+  width:min(900px,100%);margin-top:38px;display:grid;grid-template-columns:1fr auto 1fr;
+  gap:22px;align-items:center
+}
+.weekly-box{
+  background:#fff;border:1px solid #E0E5E3;border-radius:26px;padding:26px 22px;
+  box-shadow:0 16px 38px rgba(44,66,77,.07)
+}
+.weekly-box .wb-num{
+  font:700 clamp(38px,5vw,68px) "Source Serif 4",serif;color:#173D52
+}
+.weekly-box .wb-copy{
+  margin-top:7px;font-size:17px;line-height:1.4;color:#667A83
+}
+.weekly-eq{
+  font:700 42px "Source Serif 4",serif;color:#B76F2D
+}
+.weekly-message{
+  margin-top:28px;max-width:850px;font:600 clamp(20px,2.5vw,31px)/1.35 "Source Serif 4",serif;
+  color:#315365
+}
+.closing-hero{
+  text-align:center;padding:clamp(36px,6vw,70px);border-radius:34px;
+  background:linear-gradient(145deg,#173D52,#244F66);color:#fff;
+  box-shadow:0 24px 64px rgba(23,61,82,.22)
+}
+.closing-hero .closing-title{
+  font:700 clamp(44px,6vw,82px)/1.03 "Source Serif 4",serif;margin:0;color:#fff
+}
+.closing-hero .closing-title span{color:#F2C28C}
+.closing-hero .closing-sub{
+  margin:24px auto 0;max-width:820px;font-size:clamp(18px,2vw,25px);line-height:1.5;color:#D7E3E8
+}
+@media(max-width:760px){
+  .weekly-compare{grid-template-columns:1fr}
+  .weekly-eq{transform:rotate(90deg)}
+}
+
+</style>
+</head>
+<body>
+
+<div class="shell">
+<aside class="rail">
+  <div class="rail-head"><div class="mark">AIL</div><div><h1>Ilustrador AIL</h1><p>Ilustración + presentación familiar</p></div></div>
+  <div class="rail-body">
+    <section class="sect">
+      <h3>Cliente</h3>
+      <label>Solicitante A<input id="aName" value="David Pacheco"></label>
+      <div class="grid g2" style="margin-top:8px">
+        <label>Sexo<select id="aSex"><option>Hombre</option><option>Mujer</option></select></label>
+        <label>Edad<input id="aAge" type="number" value="31"></label>
+      </div>
+      <label style="margin-top:8px">Cónyuge<input id="bName" value="Valentina"></label>
+      <div class="grid g2" style="margin-top:8px">
+        <label>Sexo<select id="bSex"><option>Mujer</option><option>Hombre</option></select></label>
+        <label>Edad<input id="bAge" type="number" value="29"></label>
+      </div>
+      <label style="margin-top:8px">Número de hijos<input id="kids" type="number" min="0" value="2"></label>
+      <div style="margin-top:9px;font-size:11px;color:#62727E">Nombres de los hijos</div>
+      <div id="kidNames" class="dynamic-list"></div>
+      <button type="button" class="add-mini" id="addKidName">+ Agregar hijo</button>
+
+      <div style="margin-top:12px;font-size:11px;color:#62727E">Mascotas</div>
+      <div id="petNames" class="dynamic-list"></div>
+      <button type="button" class="add-mini" id="addPetName">+ Agregar mascota</button>
+
+      <label style="margin-top:12px">Beneficiario principal
+        <input id="beneficiary" placeholder="Nombre del beneficiario">
+      </label>
+      
+    </section>
+
+    <section class="sect">
+      <h3>Agente</h3>
+      <label>Nombre del agente<input id="agentName" value="José Pacheco"></label>
+      <label style="margin-top:8px">Agencia<input id="agency" value="American Income Life"></label>
+      <div class="grid g2" style="margin-top:8px">
+        <label>N.º de licencia<input id="license" placeholder="Ej. 12345678"></label>
+        <label>NPN<input id="npn" placeholder="Opcional"></label>
+      </div>
+      <div class="grid g2" style="margin-top:8px">
+        <label>Teléfono<input id="phone" type="tel" placeholder="(801) 555-1234"></label>
+        <label>Estado de licencia<input id="licenseState" placeholder="Utah"></label>
+      </div>
+      <label style="margin-top:8px">Correo electrónico<input id="email" type="email" placeholder="agente@correo.com"></label>
+    </section>
+
+    <section class="sect">
+      <h3>Coberturas</h3>
+
+      <div class="cover on" data-cover="whole">
+        <div class="cover-head"><input class="chk covcheck" type="checkbox" checked><b>Gastos Finales</b><small>Whole Life</small></div>
+        <div class="cover-body">
+          <div class="grid g2">
+            <label>Cobertura A<input class="ca" type="number" value="15000"></label>
+            <label>Cobertura B<input class="cb" type="number" value="15000"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover on" data-cover="protector">
+        <div class="cover-head"><input class="chk covcheck" type="checkbox" checked><b>Protector</b><small>Vida</small></div>
+        <div class="cover-body">
+          <div class="grid g2">
+            <label>Protector A<input class="ca" type="number" value="5000"></label>
+            <label>Protector B<input class="cb" type="number" value="5000"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover on" data-cover="adb">
+        <div class="cover-head"><input class="chk covcheck" type="checkbox" checked><b>ADB</b><small>Muerte accidental</small></div>
+        <div class="cover-body">
+          <div class="grid g2">
+            <label>ADB A<input class="ca" type="number" value="200000"></label>
+            <label>ADB B<input class="cb" type="number" value="200000"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover" data-cover="term">
+        <div class="cover-head"><input class="chk covcheck" type="checkbox"><b>Protección de Ingresos</b><small>Term</small></div>
+        <div class="cover-body"><label>Cobertura principal<input class="ca" type="number" value="100000"></label></div>
+      </div>
+
+      <div class="cover on" data-cover="accident">
+        <div class="cover-head"><input class="chk covcheck" type="checkbox" checked><b>Protección por Accidente</b><small>A71</small></div>
+        <div class="cover-body">
+          <div class="grid g2">
+            <label>Emergencia sin hospitalización<input class="visit" type="number" value="250"></label>
+            <label>Hospitalización por día<input class="extra" type="number" value="500"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover on" data-cover="hospital">
+        <div class="cover-head"><input class="chk covcheck" type="checkbox" checked><b>Indemnización Hospitalaria</b><small>H34</small></div>
+        <div class="cover-body">
+          <div class="grid g2">
+            <label>Beneficio diario<input class="night" type="number" value="100"></label>
+            <label>Beneficio adicional configurado<input class="icu" type="number" value="0"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover" data-cover="critical">
+        <div class="cover-head"><input class="chk covcheck" type="checkbox"><b>Enfermedad Crítica</b><small>CI</small></div>
+        <div class="cover-body"><label>Beneficio<input class="ca" type="number" value="25000"></label></div>
+      </div>
+
+      <div class="cover" data-cover="cancer">
+        <div class="cover-head"><input class="chk covcheck" type="checkbox"><b>Cáncer</b><small>Complementario</small></div>
+        <div class="cover-body"><label>Beneficio destacado<input class="ca" value="Beneficios según protección seleccionada"></label></div>
+      </div>
+
+      <div class="cover" data-cover="headstart">
+        <div class="cover-head"><input class="chk covcheck" type="checkbox"><b>HeadStart — Gastos Finales</b><small>HeadStart</small></div>
+        <div class="cover-body"><label>Cobertura por hijo<input class="ca" type="number" value="10000"></label></div>
+      </div>
+    </section>
+
+    <section class="sect">
+      <h3>Inversión y comparación</h3>
+      <div class="grid g2">
+        <label>Total<input id="premium" type="number" step=".01" value="136"></label>
+        <label>Frecuencia<select id="mode"><option>mensual</option><option>quincenal</option><option>semanal</option><option>anual</option></select></label>
+      </div>
+      <div class="grid g2" style="margin-top:8px">
+        <label>Eventos/días Accidente para total<input id="accidentDays" type="number" min="0" value="36"></label>
+        <label>Días Hospital para total<input id="hospitalDays" type="number" min="0" value="14"></label>
+      </div>
+      <div class="grid g2" style="margin-top:8px">
+        <label>Días beneficio diario para total<input id="dailyBenefitDays" type="number" min="0" value="365"></label>
+        <label>Beneficio diario adicional<input id="dailyBenefit" type="number" min="0" value="500"></label>
+      </div>
+      <div class="grid g2" style="margin-top:8px">
+        <label>Valor referencia<input id="compareValue" type="number" step=".01" min=".01" value="7"></label>
+        <label>Comparar con<input id="compareLabel" value="una comida rápida sencilla"></label>
+      </div>
+
+      <div style="font-size:10px;color:#7A8993;margin-top:6px">La comparación usa el valor de referencia que ingreses y no representa el valor de un producto específico.</div>
+    </section>
+  </div>
+
+  <div class="rail-foot">
+    <button class="btn present" id="presentBtn">▶ Presentar al cliente</button>
+    <button class="btn primary" id="pdfBtn">Descargar PDF</button>
+    <div class="btn-row">
+      <button class="btn" onclick="window.print()">Imprimir</button>
+      <button class="btn" id="resetBtn">Restablecer</button>
+    </div>
+  </div>
+</aside>
+
+<main class="stage">
+  <div class="preview-top"><span>Vista previa de la ilustración</span><span>Se actualiza automáticamente</span></div>
+  <div class="doc" id="doc">
+    <div class="band"><div class="co">American Income Life<small>Resumen ilustrativo de protección</small></div><div id="pdfAgent"></div></div>
+    <div class="paper">
+      <h1>Resumen de protección familiar</h1>
+      <div class="sub">Preparado para ayudarte a conversar sobre las necesidades de protección de tu familia.</div>
+      <div class="clientbox">
+        <div><div class="lbl">Solicitante</div><div class="val" id="pdfA"></div></div>
+        <div><div class="lbl">Cónyuge</div><div class="val" id="pdfB"></div></div>
+        <div><div class="lbl">Hijos</div><div class="val" id="pdfKids"></div></div>
+      </div>
+      <div class="cards" id="pdfCards"></div>
+      <div class="summary"><div><div class="lbl">Valor ingresado</div><div>Protección actual</div></div><b id="pdfPremium"></b></div>
+      <div class="family-value">
+        <div class="valuebox">
+          <div class="vlabel">Valor semanal por persona</div>
+          <div class="vbig" id="pdfWeeklyPerson">$0.00</div>
+          <div class="vsmall" id="pdfWeeklyDesc"></div>
+        </div>
+        <div class="valuebox">
+          <div class="vlabel">PROTECCIÓN TOTAL ILUSTRATIVA</div>
+          <div class="vbig" id="pdfFamilyTotal" style="font-size:34px">$0</div>
+          <div class="vsmall">Suma ilustrativa de los beneficios cuantificables seleccionados. No todos necesariamente pueden pagarse simultáneamente.</div>
+        </div>
+      </div>
+      <div class="disclaimer">Este documento es un resumen ilustrativo y no constituye una protección ni una garantía de cobertura. Los beneficios, primas, elegibilidad, exclusiones, limitaciones y condiciones reales dependen de la solicitud, suscripción y documentos oficiales emitidos por la compañía.</div>
+    </div>
+  </div>
+</main>
+</div>
+
+<div id="pres" aria-hidden="true">
+  <div class="p-top">
+    <div class="p-brand">AIL · Protección familiar</div>
+    <div class="p-client" id="pClient"></div>
+    <div class="sp"></div>
+    <div class="dots" id="dots"></div>
+    <button class="close" id="closePres">Cerrar ✕</button>
+  </div>
+  <div class="p-stage" id="pStage"></div>
+  <div class="p-foot">
+    <button class="pbtn" id="prev">← Anterior</button>
+    <div class="help">← → avanzar · F pantalla completa</div>
+    <button class="pbtn primary" id="next">Siguiente →</button>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const money=n=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(Number(n||0));
+const val=id=>$(id).value;
+const first=s=>(String(s||"").trim().split(/\s+/)[0]||"");
+const safe=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+document.querySelectorAll(".cover-head").forEach(h=>{
+  h.addEventListener("click",e=>{
+    if(e.target.classList.contains("covcheck")) return;
+    const box=h.closest(".cover"), cb=box.querySelector(".covcheck");
+    cb.checked=!cb.checked; box.classList.toggle("on",cb.checked); render();
+  });
+});
+document.querySelectorAll(".covcheck").forEach(cb=>cb.addEventListener("change",()=>{
+  cb.closest(".cover").classList.toggle("on",cb.checked);render();
+}));
+document.querySelectorAll("input,select,textarea").forEach(el=>el.addEventListener("input",render));
+
+function state(){
+  return {
+    a:{name:val("aName"),sex:val("aSex"),age:val("aAge")},
+    b:{name:val("bName"),sex:val("bSex"),age:val("bAge")},
+    kids:Number(val("kids")||0),
+    agent:val("agentName"),agency:val("agency"),
+    license:val("license"),npn:val("npn"),phone:val("phone"),
+    licenseState:val("licenseState"),email:val("email"),
+    premium:Number(val("premium")||0),mode:val("mode"),
+    accidentDays:Number(val("accidentDays")||0),
+    hospitalDays:Number(val("hospitalDays")||0),
+    dailyBenefitDays:Number(val("dailyBenefitDays")||0),
+    dailyBenefit:Number(val("dailyBenefit")||0),
+    compareValue:Number(val("compareValue")||7),
+    compareLabel:val("compareLabel")||"una comida rápida sencilla",
+    beneficiary:val("beneficiary"),
+    kidNames:[...document.querySelectorAll("#kidNames input")].map(x=>x.value.trim()).filter(Boolean),
+    petNames:[...document.querySelectorAll("#petNames input")].map(x=>x.value.trim()).filter(Boolean)
+  };
+}
+function coverCards(){
+  const out=[];
+  document.querySelectorAll(".cover").forEach(box=>{
+    if(!box.querySelector(".covcheck").checked)return;
+    const type=box.dataset.cover;
+    const q=s=>box.querySelector(s)?.value||"";
+
+    if(type==="whole") out.push({
+      type,name:"Gastos Finales",kick:"Vida",form:"Whole Life",
+      life:true,icon:"WL",
+      li:[
+        q(".ca")?`Asegurado principal: ${money(q(".ca"))}`:"",
+        q(".cb")?`Cónyuge: ${money(q(".cb"))}`:"",
+        "Beneficio por muerte pagado al beneficiario que se nombre."
+      ].filter(Boolean),
+      meaning:"Gastos Finales"
+    });
+
+    // "Protector" is retained only because it is a user-entered amount requested for the total.
+    if(type==="protector") out.push({
+      type,name:"Protector",kick:"Vida",form:"Protector",life:true,icon:"PR",
+      li:[
+        q(".ca")?`Asegurado principal: ${money(q(".ca"))}`:"",
+        q(".cb")?`Cónyuge: ${money(q(".cb"))}`:""
+      ].filter(Boolean),
+      meaning:"Protector"
+    });
+
+    if(type==="adb") out.push({
+      type,name:"Muerte Accidental (ADB)",kick:"Vida",form:"ADB",life:true,icon:"ADB",
+      li:[
+        q(".ca")?`Asegurado principal: ${money(q(".ca"))}`:"",
+        q(".cb")?`Cónyuge: ${money(q(".cb"))}`:"",
+        "Se suma al beneficio si el fallecimiento es por accidente."
+      ].filter(Boolean),
+      meaning:"Muerte Accidental (ADB)"
+    });
+
+    if(type==="term") out.push({
+      type,name:"Protección de Ingresos",kick:"Vida",form:"Term",life:true,icon:"TERM",
+      li:[
+        `Asegurado principal: ${money(q(".ca"))}`,
+        "Protección durante el plazo seleccionado."
+      ],
+      meaning:"Protección de Ingresos"
+    });
+
+    if(type==="accident") out.push({
+      type,name:"Protección por Accidente",kick:"Suplementales",form:"A71",icon:"A71",
+      li:[
+        `Emergencia sin hospitalización: hasta ${money(q(".visit"))}`,
+        `Hospitalización: ${money(q(".extra") || 0)}`,
+        "Cuidados intensivos (UCI): se suma al beneficio de hospitalización."
+      ].filter(Boolean),
+      meaning:"Protección por Accidente"
+    });
+
+    if(type==="hospital") out.push({
+      type,name:"Indemnización Hospitalaria",kick:"Suplementales",form:"H34",icon:"H34",
+      li:[
+        `Beneficio diario: ${money(q(".night"))}`,
+        `Cuidados intensivos (UCI): ${money(q(".icu"))}`
+      ],
+      meaning:"Indemnización Hospitalaria"
+    });
+
+    if(type==="critical") out.push({
+      type,name:"Enfermedad Crítica",kick:"Suplementales",form:"CI",icon:"CI",
+      li:[`Beneficio: ${money(q(".ca"))}`],
+      meaning:"Enfermedad Crítica"
+    });
+
+    if(type==="cancer") out.push({
+      type,name:"Cáncer — Suma Global",kick:"Suplementales",form:"C20",icon:"C20",
+      li:[q(".ca")],
+      meaning:"Cáncer — Suma Global"
+    });
+
+    if(type==="headstart") out.push({
+      type,name:"HeadStart — Gastos Finales",kick:"Vida",form:"HeadStart",life:true,icon:"HS",
+      li:[`Cobertura por hijo: ${money(q(".ca"))}`],
+      meaning:"HeadStart — Gastos Finales"
+    });
+  });
+  return out;
+}
+function familyCount(s){
+  return Math.max(1,(s.a.name?1:0)+(s.b.name?1:0)+Math.max(0,s.kids||0));
+}
+function annualPremium(s){
+  const p=Number(s.premium||0);
+  if(s.mode==="mensual") return p*12;
+  if(s.mode==="quincenal") return p*26;
+  if(s.mode==="semanal") return p*52;
+  return p;
+}
+function weeklyPerPerson(s){
+  return annualPremium(s)/52/familyCount(s);
+}
+function money2(n){
+  return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n||0));
+}
+function familyProtectionBreakdown(s,cards){
+  const members=familyCount(s);
+  let items=[], total=0;
+
+  function add(label,value,detail){
+    value=Number(value||0);
+    if(value>0){items.push({label,value,detail});total+=value}
+  }
+
+  const whole=document.querySelector('.cover[data-cover="whole"]');
+  if(whole?.querySelector(".covcheck")?.checked){
+    const a=Number(whole.querySelector(".ca")?.value||0);
+    const b=Number(whole.querySelector(".cb")?.value||0);
+    add("Gastos finales / Whole Life",a+b,`${money(a)} + ${money(b)}`);
+  }
+
+  const protector=document.querySelector('.cover[data-cover="protector"]');
+  if(protector?.querySelector(".covcheck")?.checked){
+    const a=Number(protector.querySelector(".ca")?.value||0);
+    const b=Number(protector.querySelector(".cb")?.value||0);
+    add("Protectores",a+b,`${money(a)} + ${money(b)}`);
+  }
+
+  const adb=document.querySelector('.cover[data-cover="adb"]');
+  if(adb?.querySelector(".covcheck")?.checked){
+    const a=Number(adb.querySelector(".ca")?.value||0);
+    const b=Number(adb.querySelector(".cb")?.value||0);
+    add("ADB",a+b,`${money(a)} + ${money(b)}`);
+  }
+
+  const term=document.querySelector('.cover[data-cover="term"]');
+  if(term?.querySelector(".covcheck")?.checked){
+    const t=Number(term.querySelector(".ca")?.value||0);
+    add("Seguro temporal",t,money(t));
+  }
+
+  const accident=document.querySelector('.cover[data-cover="accident"]');
+  if(accident?.querySelector(".covcheck")?.checked){
+    const visit=Number(accident.querySelector(".visit")?.value||0);
+    const calc=visit*members*Math.max(0,s.accidentDays||0);
+    add("Accidente",calc,`${money(visit)} × ${members} personas × ${s.accidentDays} = ${money(calc)}`);
+  }
+
+  const hospital=document.querySelector('.cover[data-cover="hospital"]');
+  if(hospital?.querySelector(".covcheck")?.checked){
+    const night=Number(hospital.querySelector(".night")?.value||0);
+    const calc=night*members*Math.max(0,s.hospitalDays||0);
+    add("Hospitalización",calc,`${money(night)} × ${members} personas × ${s.hospitalDays} días = ${money(calc)}`);
+  }
+
+  if(s.dailyBenefit>0 && s.dailyBenefitDays>0){
+    const calc=s.dailyBenefit*members*s.dailyBenefitDays;
+    add("Beneficio diario adicional",calc,`${money(s.dailyBenefit)} × ${members} personas × ${s.dailyBenefitDays} días = ${money(calc)}`);
+  }
+
+  const critical=document.querySelector('.cover[data-cover="critical"]');
+  if(critical?.querySelector(".covcheck")?.checked){
+    const amt=Number(critical.querySelector(".ca")?.value||0);
+    add("Enfermedad crítica",amt*members,`${money(amt)} × ${members} personas`);
+  }
+
+  const head=document.querySelector('.cover[data-cover="headstart"]');
+  if(head?.querySelector(".covcheck")?.checked){
+    const amt=Number(head.querySelector(".ca")?.value||0), kids=Math.max(0,s.kids||0);
+    add("Head Start",amt*kids,`${money(amt)} × ${kids} hijos`);
+  }
+
+  return {members,items,total};
+}
+function render(){
+  const s=state(),cards=coverCards();
+  const agentMeta = [
+    s.agency,
+    s.license ? `Lic. ${s.license}${s.licenseState ? " · "+s.licenseState : ""}` : "",
+    s.npn ? `NPN ${s.npn}` : "",
+    s.phone,
+    s.email
+  ].filter(Boolean);
+  $("pdfAgent").innerHTML=`<b>${safe(s.agent)}</b><br><small>${agentMeta.map(safe).join("<br>")}</small>`;
+  $("pdfA").textContent=s.a.name||"—";
+  $("pdfB").textContent=s.b.name||"—";
+  $("pdfKids").textContent=s.kids;
+  $("pdfPremium").textContent=`${money(s.premium)} / ${s.mode}`;
+  const famCalc=familyProtectionBreakdown(s,cards);
+  const wpp=weeklyPerPerson(s);
+  $("pdfWeeklyPerson").textContent=money2(wpp);
+  const cmp=s.compareValue>0 ? wpp/s.compareValue : 0;
+  $("pdfWeeklyDesc").textContent=`${famCalc.members} miembros · equivale aproximadamente a ${cmp.toFixed(1)} × ${s.compareLabel} de ${money2(s.compareValue)} por persona a la semana.`;
+  $("pdfFamilyTotal").textContent=money(famCalc.total);
+  $("pdfCards").innerHTML=cards.length?cards.map(c=>`
+    <div class="card ${c.life?"life":""}">
+      <div class="kick">${c.kick}</div><h3>${c.name}</h3><div class="form">${c.form}</div>
+      <ul>${c.li.map(x=>`<li>${safe(x)}</li>`).join("")}</ul>
+    </div>`).join(""):`<div class="card"><h3>Selecciona una cobertura</h3><p>No hay coberturas activas.</p></div>`;
+}
+
+function makeDynamicRow(containerId,value=""){
+  const box=$(containerId);
+  const row=document.createElement("div");
+  row.className="dynamic-row";
+  row.innerHTML=`<input value="${safe(value)}" placeholder="Nombre"><button type="button">×</button>`;
+  row.querySelector("input").addEventListener("input",render);
+  row.querySelector("button").addEventListener("click",()=>{row.remove();syncKidCount();render()});
+  box.appendChild(row);
+}
+function syncKidCount(){
+  const n=document.querySelectorAll("#kidNames .dynamic-row").length;
+  if(n>Number($("kids").value||0)) $("kids").value=n;
+}
+function syncKidRowsToCount(){
+  const want=Math.max(0,Number($("kids").value||0));
+  const box=$("kidNames");
+  while(box.children.length<want) makeDynamicRow("kidNames","");
+  while(box.children.length>want) box.lastElementChild.remove();
+}
+$("addKidName").addEventListener("click",()=>{makeDynamicRow("kidNames","");syncKidCount();render()});
+$("addPetName").addEventListener("click",()=>{makeDynamicRow("petNames","");render()});
+$("kids").addEventListener("input",()=>{syncKidRowsToCount();render()});
+syncKidRowsToCount();
+
+render();
+
+async function downloadPDF(){
+  const btn=$("pdfBtn"),old=btn.textContent;btn.textContent="Generando…";btn.disabled=true;
+  try{
+    const canvas=await html2canvas($("doc"),{scale:2,backgroundColor:"#ffffff",useCORS:true});
+    const img=canvas.toDataURL("image/jpeg",.94);
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF("p","in","letter");
+    pdf.addImage(img,"JPEG",0,0,8.5,11);
+    pdf.save(`ilustracion-${(state().a.name||"cliente").replace(/\s+/g,"-").toLowerCase()}.pdf`);
+  }catch(e){alert("No se pudo generar el PDF. "+e.message)}
+  finally{btn.textContent=old;btn.disabled=false}
+}
+$("pdfBtn").addEventListener("click",downloadPDF);
+
+let slides=[],idx=0;
+function peopleHTML(s){
+  let x="";
+  if(s.a.name)x+=`<div class="person"><div class="face">${s.a.sex==="Hombre"?"A":"A"}</div><b>${safe(first(s.a.name))}</b><small>Asegurado</small></div>`;
+  if(s.b.name)x+=`<div class="person"><div class="face">${s.b.sex==="Hombre"?"A":"A"}</div><b>${safe(first(s.b.name))}</b><small>Asegurado</small></div>`;
+
+  for(let i=0;i<s.kids;i++){
+    const nm=s.kidNames[i] || `Hijo/a ${i+1}`;
+    x+=`<div class="person"><div class="face">HIJO</div><b>${safe(nm)}</b><small>Asegurado/a</small></div>`;
+  }
+  for(const pet of s.petNames){
+    x+=`<div class="person"><div class="face">MASC</div><b>${safe(pet)}</b><small>Parte emocional de la familia · no cubierta</small></div>`;
+  }
+  return x||`<div class="person"><div class="face">HOGAR</div><b>Tu familia</b><small>Lo que queremos proteger</small></div>`;
+}
+function buildPresentation(){
+  const s=state(),cards=coverCards(),fam=[first(s.a.name),first(s.b.name)].filter(Boolean).join(" y ")||"Tu familia";
+  const famCalc=familyProtectionBreakdown(s,cards);
+  const wpp=weeklyPerPerson(s);
+  const cmp=s.compareValue>0 ? wpp/s.compareValue : 0;
+
+  let h=`
+  <section class="slide on"><div class="wrap">
+    <div class="kicker">Resumen de beneficios</div>
+    <h1 class="title">Sus beneficios,<br><span class="warm">${safe(fam)}</span></h1>
+    <p class="lead">Ahora vamos a revisar, uno por uno, los beneficios que quedaron seleccionados y cuánto representa el conjunto para la familia.</p>
+    <div class="plan-grid">${cards.length?cards.map(c=>`
+      <div class="plan ${c.life?"life":""}">
+        <div class="kicker" style="margin:0 0 5px;font-size:9px">${safe(c.kick)}</div>
+        <h3>${safe(c.name)}</h3>
+        <div class="form">${safe(c.form)}</div>
+        <ul>${c.li.slice(0,4).map(x=>`<li>${safe(x)}</li>`).join("")}</ul>
+      </div>`).join(""):`<div class="plan"><h3>No hay beneficios seleccionados</h3></div>`}
+    </div>
+    ${(s.kidNames.length||s.petNames.length||s.beneficiary)?`
+      <div class="family-names">
+        ${s.kidNames.length?`<div><b>Hijos:</b> ${s.kidNames.map(safe).join(", ")}</div>`:""}
+        ${s.petNames.length?`<div style="margin-top:5px"><b>Mascotas:</b> ${s.petNames.map(safe).join(", ")} <span style="color:#87949B">· parte de la familia, no incluidas en los beneficios</span></div>`:""}
+        ${s.beneficiary?`<div style="margin-top:5px"><b>Beneficiario:</b> ${safe(s.beneficiary)}</div>`:""}
+      </div>`:""}
+  </div></section>`;
+
+  cards.forEach((c,i)=>{
+    h+=`<section class="slide"><div class="wrap focus">
+      <div class="focusbox">
+        <div class="symbol">${safe(c.icon)}</div>
+        <div class="fk">${safe(c.form)}</div>
+        <div class="fn">${safe(c.name)}</div>
+      </div>
+      <div>
+        <div class="kicker">${safe(c.kick)}</div>
+        <h2 class="title" style="font-size:clamp(38px,5vw,68px)">${safe(c.name)}</h2>
+        <div class="benefits">
+          ${c.li.map(x=>`<div class="benefit"><span class="check">•</span><span>${safe(x)}</span></div>`).join("")}
+        </div>
+      </div>
+    </div></section>`;
+  });
+
+  h+=`<section class="slide"><div class="wrap">
+    <div class="total-hero">
+      <div class="tk">Valor total del ejemplo</div>
+      <div class="tv">${money(famCalc.total)}</div>
+      <div class="ts">La suma de los montos configurados para este ejemplo familiar.</div>
+      <div class="total-breakdown">
+        ${famCalc.items.map(it=>`
+          <div class="total-piece">
+            <small>${safe(it.label)}</small>
+            <b>${money(it.value)}</b>
+            <span>${safe(it.detail)}</span>
+          </div>`).join("")}
+      </div>
+    </div>
+  </div></section>`;
+
+  h+=`<section class="slide"><div class="wrap weekly-hero">
+    <div class="wk-label">El valor de proteger a la familia, visto por persona</div>
+    <div class="wk-value">${money2(wpp)}</div>
+    <div class="wk-sub">por persona · por semana</div>
+    <div class="wk-family">${famCalc.members} personas incluidas en la división</div>
+
+    <div class="weekly-compare">
+      <div class="weekly-box">
+        <div class="wb-num">${money2(wpp)}</div>
+        <div class="wb-copy">valor semanal por persona para todos los beneficios que acabamos de revisar</div>
+      </div>
+      <div class="weekly-eq">≈</div>
+      <div class="weekly-box">
+        <div class="wb-num">${cmp.toFixed(1)}×</div>
+        <div class="wb-copy">${safe(s.compareLabel)} con un valor de ${money2(s.compareValue)} cada una</div>
+      </div>
+    </div>
+
+    <div class="weekly-message">
+      Por aproximadamente ${money2(wpp)} a la semana por persona, la familia mantiene el conjunto de beneficios que acabamos de revisar.
+    </div>
+  </div></section>`;
+
+  h+=`<section class="slide"><div class="wrap">
+    <div class="kicker">Su inversión total</div>
+    <h2 class="title">${money2(s.premium)} <span class="warm">/ ${safe(s.mode)}</span></h2>
+    <p class="lead">Incluye los beneficios seleccionados que acabamos de revisar para la familia.</p>
+    <div class="p-metrics">
+      <div class="p-metric">
+        <div class="mk">Personas incluidas en la división</div>
+        <div class="mv">${famCalc.members}</div>
+        <div class="md">Adultos e hijos. Las mascotas y el beneficiario no se incluyen en esta división.</div>
+      </div>
+      <div class="p-metric">
+        <div class="mk">Por persona / semana</div>
+        <div class="mv">${money2(wpp)}</div>
+        <div class="md">La misma inversión expresada de una forma más fácil de comparar.</div>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="slide"><div class="wrap">
+    <div class="closing-hero">
+      <div class="kicker" style="color:#F2C28C">El siguiente paso</div>
+      <h2 class="closing-title">¿Están listos para darle <span>valor de protección</span> a ustedes y a las personas que aman?</h2>
+      <p class="closing-sub">Ya vimos qué beneficios tienen disponibles, qué representan para la familia y cuál es su valor semanal por persona.</p>
+      <div class="p-note" style="color:#BFD0D8;margin-top:28px">
+        Presentado por ${safe(s.agent)} · ${safe(s.agency)}${s.license ? ` · Lic. ${safe(s.license)}` : ""}${s.phone ? ` · ${safe(s.phone)}` : ""}
+      </div>
+    </div>
+  </div></section>`;
+
+  $("pStage").innerHTML=h;
+  $("pClient").textContent=fam;
+  slides=[...document.querySelectorAll(".slide")];
+  idx=0;
+  buildDots();
+  show(0);
+}
+function buildDots(){
+  $("dots").innerHTML=slides.map((_,i)=>`<span class="dot${i===0?" on":""}" data-i="${i}"></span>`).join("");
+  document.querySelectorAll(".dot").forEach(d=>d.onclick=()=>show(+d.dataset.i));
+}
+function show(i){
+  idx=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,n)=>s.classList.toggle("on",n===idx));
+  document.querySelectorAll(".dot").forEach((d,n)=>d.classList.toggle("on",n===idx));
+  $("prev").disabled=idx===0;$("next").textContent=idx===slides.length-1?"Finalizar":"Siguiente →";
+}
+function openPres(){buildPresentation();$("pres").classList.add("on");document.body.style.overflow="hidden"}
+function closePres(){$("pres").classList.remove("on");document.body.style.overflow="";if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
+$("presentBtn").onclick=openPres;$("closePres").onclick=closePres;$("prev").onclick=()=>show(idx-1);
+$("next").onclick=()=>idx===slides.length-1?closePres():show(idx+1);
+document.addEventListener("keydown",e=>{
+  if(!$("pres").classList.contains("on"))return;
+  if(e.key==="ArrowRight"||e.key===" "){e.preventDefault();show(idx+1)}
+  if(e.key==="ArrowLeft"){e.preventDefault();show(idx-1)}
+  if(e.key.toLowerCase()==="f"){e.preventDefault();if(!document.fullscreenElement)$("pres").requestFullscreen?.();else document.exitFullscreen?.()}
+});
+$("resetBtn").onclick=()=>location.reload();
+</script>
+</body>
+</html>
