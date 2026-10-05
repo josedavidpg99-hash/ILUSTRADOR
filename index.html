@@ -1,965 +1,1147 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ilustrador AIL + Presentación Familiar</title>
+<title>Ilustrador AIL</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
 <style>
 :root{
-  --blue:#00558C;--blue2:#003F69;--green:#098A1D;--orange:#F78E1E;
-  --bg:#E9EEF3;--panel:#fff;--soft:#F5F8FA;--line:#D2DCE4;
-  --text:#16202B;--muted:#62727E;--warm:#B76F2D;
+  --ail-blue:#00558C; --ail-blue-dk:#003F69; --ail-blue-lt:#E8F1F7; --ail-blue-mid:#4A8DBA;
+  --ail-green:#098A1D; --ail-green-lt:#EDF6EE; --amber:#B4650C; --amber-lt:#FFFCF6; --orange:#F78E1E;
+  --ground:#E9EEF3; --panel:#FFFFFF; --panel-2:#F5F8FA;
+  --line:#D2DCE4; --line-soft:#E4EBF1;
+  --text:#16202B; --text-2:#55636F; --text-3:#8493A0;
+  --paper:#FFFFFF; --doc-ink:#1F2937; --doc-ink2:#54626F; --doc-rule:#D5DEE6; --doc-tint:#F4F7FA;
+  --doc-blue:#00558C; --doc-blue-lt:#E8F1F7; --doc-blue-mid:#4A8DBA;
+  --doc-green:#098A1D; --doc-green-lt:#EDF6EE; --doc-amber:#B4650C; --doc-amber-lt:#FFFCF6; --doc-orange:#F78E1E;
+  --focus:#0B7FC7;
 }
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme: dark){
+    --ground:#0E151C; --panel:#182430; --panel-2:#131E28;
+    --line:#2A3A48; --line-soft:#223140;
+    --text:#E6EDF3; --text-2:#9FB0BE; --text-3:#6E8090;
+    --ail-blue-lt:#12293C; --ail-green-lt:#0F2718; --amber-lt:#241A0C;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E151C; --panel:#182430; --panel-2:#131E28;
+  --line:#2A3A48; --line-soft:#223140;
+  --text:#E6EDF3; --text-2:#9FB0BE; --text-3:#6E8090;
+  --ail-blue-lt:#12293C; --ail-green-lt:#0F2718; --amber-lt:#241A0C;
+}
+
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif}
-button,input,select,textarea{font:inherit}
-.shell{display:grid;grid-template-columns:390px minmax(0,1fr);min-height:100vh}
-.rail{background:#fff;border-right:1px solid var(--line);height:100vh;position:sticky;top:0;display:flex;flex-direction:column}
-.rail-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;gap:11px}
-.mark{width:38px;height:38px;border-radius:8px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800}
-.rail-head h1{font:700 20px "Source Serif 4",serif;margin:0}
-.rail-head p{margin:2px 0 0;color:var(--muted);font-size:12px}
-.rail-body{overflow:auto;padding:4px 20px 20px;flex:1}
-.sect{padding:15px 0;border-bottom:1px solid #E7EDF1}
-.sect h3{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:#7A8993;margin:0 0 10px}
-.grid{display:grid;gap:9px}.g2{grid-template-columns:1fr 1fr}
-label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
-input,select,textarea{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:7px;background:var(--soft);color:var(--text)}
-textarea{resize:vertical;min-height:54px}
-.cover{border:1px solid var(--line);border-radius:9px;margin:8px 0;overflow:hidden}
-.cover.on{border-color:var(--blue);box-shadow:inset 3px 0 0 var(--blue)}
-.cover-head{padding:10px 11px;display:flex;gap:8px;align-items:center;cursor:pointer}
-.cover-head b{font-size:13px}.cover-head small{margin-left:auto;color:#84929B}
-.cover-body{display:none;padding:11px;border-top:1px solid #E6ECF0;background:#FCFDFE}
-.cover.on .cover-body{display:block}
-.chk{width:auto;accent-color:var(--blue)}
-.rail-foot{padding:13px 20px;background:var(--soft);border-top:1px solid var(--line);display:grid;gap:8px}
-.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px 12px;font-weight:700;cursor:pointer}
-.btn.primary{background:var(--blue);border-color:var(--blue);color:white}
-.btn.present{background:linear-gradient(135deg,#0B6FA4,var(--blue2));border-color:var(--blue);color:white}
-.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.stage{padding:26px;overflow:auto}
-.preview-top{max-width:8.5in;margin:0 auto 14px;display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
-.doc{width:8.5in;margin:auto;background:white;min-height:11in;box-shadow:0 12px 32px rgba(24,45,60,.12)}
-.band{background:var(--blue);color:#fff;padding:16px .6in;display:flex;justify-content:space-between}
-.band .co{font:700 20px "Source Serif 4",serif}.band small{display:block;font:400 9px "IBM Plex Sans";letter-spacing:2px;margin-top:3px}
-.paper{padding:.45in .62in .58in}
-.paper h1{font:700 30px "Source Serif 4",serif;color:var(--blue);margin:0 0 6px}
-.paper .sub{color:var(--muted);margin-bottom:18px}
-.clientbox{background:#EAF3F8;border-left:4px solid var(--blue);padding:14px 16px;border-radius:0 10px 10px 0;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-.lbl{font-size:9px;text-transform:uppercase;color:#7D8A92;letter-spacing:1px}.val{font-weight:700;color:var(--blue);margin-top:2px}
-.cards{display:grid;grid-template-columns:1fr 1fr;gap:13px}
-.card{border:1px solid #D8E0E5;border-top:4px solid var(--blue);border-radius:10px;padding:14px}
-.card.life{border-top-color:var(--green)}
-.card .kick{text-transform:uppercase;color:#839099;font-size:9px;letter-spacing:1px}
-.card h3{font:700 18px "Source Serif 4",serif;color:var(--blue);margin:4px 0}
-.card .form{color:#7C8991;font-size:11px;margin-bottom:8px}
-.card ul{padding-left:17px;margin:8px 0 0;line-height:1.5;font-size:12px}
-.summary{margin-top:20px;background:#F5F8FA;border:1px solid #DDE5E9;border-radius:10px;padding:15px;display:flex;justify-content:space-between;align-items:center}
-.summary b{font-size:28px;color:var(--blue)}
-.disclaimer{margin-top:20px;color:#7A878F;font-size:9.5px;line-height:1.45}
+body{
+  margin:0; background:var(--ground); color:var(--text);
+  font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:14px; line-height:1.5;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 
-/* presentation */
-#pres{display:none;position:fixed;inset:0;z-index:9999;background:#F8F5EF;color:#20303A}
-#pres.on{display:flex;flex-direction:column}
-.p-top{height:62px;background:rgba(255,255,255,.9);border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center;padding:0 22px;gap:12px}
-.p-brand{font-weight:800;color:#244A60}.p-client{font-size:13px;color:#76868E}.sp{flex:1}
-.dots{display:flex;gap:6px}.dot{width:7px;height:7px;border-radius:20px;background:#CBD6DB}.dot.on{width:25px;background:#D68D47}
-.close{border:1px solid #D9E0E3;background:#fff;border-radius:9px;padding:8px 10px;cursor:pointer}
-.p-stage{position:relative;flex:1;overflow:hidden}
-.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:clamp(26px,5vw,70px);opacity:0;transform:translateX(32px);pointer-events:none;transition:.3s;overflow:auto}
-.slide.on{opacity:1;transform:none;pointer-events:auto}
-.slide:nth-child(odd){background:radial-gradient(circle at 8% 10%,rgba(234,186,128,.20),transparent 29%),#F8F5EF}
-.slide:nth-child(even){background:radial-gradient(circle at 92% 10%,rgba(0,85,140,.08),transparent 28%),#FCFBF8}
-.wrap{width:min(1120px,100%);margin:auto}
-.kicker{text-transform:uppercase;letter-spacing:1.7px;font-weight:800;color:var(--warm);font-size:12px;margin-bottom:12px}
-.title{font:700 clamp(39px,5.4vw,76px)/1.04 "Source Serif 4",serif;color:#173D52;margin:0 0 20px;letter-spacing:-1.2px}
-.title .warm{color:var(--warm)}.title .blue{color:var(--blue)}
-.lead{max-width:850px;color:#5E7079;font-size:clamp(17px,2vw,24px);line-height:1.55}
-.family{display:flex;flex-wrap:wrap;gap:15px;margin-top:25px}
-.person{background:#fff;border:1px solid #E5E3DC;border-radius:22px;padding:21px;min-width:145px;flex:1 1 145px;text-align:center;box-shadow:0 12px 30px rgba(44,66,77,.06)}
-.face{width:62px;height:62px;border-radius:50%;margin:auto auto 10px;background:linear-gradient(145deg,#E8F1F4,#F7E8D7);display:grid;place-items:center;font-size:12px;font-weight:800;letter-spacing:.6px;color:#315365}
-.person b{display:block;color:#274D61}.person small{color:#87949B}
-.q{background:#fff;border-left:5px solid #D68D47;border-radius:0 18px 18px 0;padding:21px 24px;margin:13px 0;font:600 clamp(19px,2.2vw,29px) "Source Serif 4",serif;color:#294B5D;box-shadow:0 10px 28px rgba(44,66,77,.05)}
-.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;margin-top:24px}
-.plan{background:#fff;border:1px solid #E1E5E3;border-radius:21px;padding:21px;position:relative;overflow:hidden}
-.plan:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#6DAA9C}.plan.life:before{background:#D68D47}
-.plan h3{font:700 21px "Source Serif 4",serif;color:#244A60;margin:4px 0}.plan .form{font-size:12px;color:#859197}
-.plan ul{padding-left:18px;color:#52656F;line-height:1.5}
-.focus{display:grid;grid-template-columns:.72fr 1.28fr;gap:30px;align-items:center}
-.focusbox{min-height:330px;border-radius:31px;background:linear-gradient(145deg,#173D52,#00558C);color:#fff;padding:32px;display:flex;flex-direction:column;justify-content:flex-end;box-shadow:0 24px 60px rgba(0,85,140,.2)}
-.symbol{font-size:60px;margin-bottom:auto}.focusbox .fk{text-transform:uppercase;font-size:10px;letter-spacing:1.5px;opacity:.75}.focusbox .fn{font:700 34px/1.08 "Source Serif 4",serif;margin-top:5px}
-.benefits{display:grid;gap:11px}.benefit{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid #E5E5DF;border-radius:15px;padding:14px 16px;color:#4D626B}
-.check{flex:none;width:25px;height:25px;border-radius:50%;background:#E6F2EE;color:#237A66;display:grid;place-items:center;font-weight:900}
-.premium{display:flex;align-items:flex-end;gap:15px;margin-top:17px}.amount{font:700 clamp(60px,8vw,104px)/.9 "Source Serif 4",serif;color:var(--blue);letter-spacing:-2px}.mode{padding-bottom:9px;color:#75858C;font-size:17px}
-.final{background:linear-gradient(145deg,#173D52,#244F66);color:#fff;border-radius:34px;padding:clamp(30px,5vw,58px);box-shadow:0 25px 65px rgba(23,61,82,.22)}
-.final .title{color:#fff}.final .lead{color:#D7E3E8}.finalq{margin-top:28px;padding:19px 21px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.09);border-radius:17px;font:600 clamp(19px,2vw,26px) "Source Serif 4",serif}
-.p-note{font-size:12px;color:#85939A;line-height:1.5;margin-top:18px}
-.p-foot{height:68px;background:#fff;border-top:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:10px;padding:10px 22px}
-.p-foot .help{margin:auto;color:#8B989E;font-size:12px}.pbtn{border:1px solid #D6DFE3;background:#fff;color:#315365;border-radius:11px;padding:10px 14px;font-weight:800;cursor:pointer}.pbtn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
-.stackval{margin-top:18px;border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--soft)}
-.stk-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px}
-.stk-row:last-child{border-bottom:none}
-.stk-row.total{font-weight:800;font-size:16px}
-.stk-reveal{text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+/* ═══════ workspace shell ═══════ */
+.shell{display:grid; grid-template-columns:392px minmax(0,1fr); min-height:100vh}
+@media (max-width:1080px){ .shell{grid-template-columns:1fr} }
+
+.rail{
+  background:var(--panel); border-right:1px solid var(--line);
+  display:flex; flex-direction:column; max-height:100vh; position:sticky; top:0;
+}
+@media (max-width:1080px){ .rail{max-height:none; position:static} }
+
+.rail-head{padding:18px 20px 14px; border-bottom:1px solid var(--line); display:flex; gap:12px; align-items:flex-start}
+.mark{
+  width:36px;height:36px;flex:none;border-radius:7px;background:var(--ail-blue);
+  color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;letter-spacing:.5px;
+}
+.rail-head h1{
+  margin:0; font-family:"Source Serif 4",Georgia,serif; font-size:19px; font-weight:700;
+  letter-spacing:-.2px; line-height:1.15;
+}
+.rail-head p{margin:2px 0 0; font-size:12px; color:var(--text-2)}
+
+.rail-body{overflow-y:auto; padding:6px 20px 20px; flex:1}
+.rail-foot{
+  padding:14px 20px; border-top:1px solid var(--line); background:var(--panel-2);
+  display:flex; flex-direction:column; gap:8px;
+}
+
+/* ═══════ form primitives ═══════ */
+fieldset{border:0;padding:0;margin:0}
+.sect{border-bottom:1px solid var(--line-soft); padding:16px 0}
+.sect:last-child{border-bottom:0}
+.sect > legend, .sect-h{
+  font-size:11px; font-weight:600; letter-spacing:1.1px; text-transform:uppercase;
+  color:var(--text-3); margin:0 0 11px; padding:0; display:block;
+}
+.grid{display:grid; gap:10px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+
+label.f{display:flex; flex-direction:column; gap:4px; min-width:0}
+label.f > span{font-size:11.5px; color:var(--text-2); font-weight:500}
+input[type=text],input[type=date],input[type=number],select,textarea{
+  background:var(--panel-2); border:1px solid var(--line); border-radius:6px;
+  padding:7px 9px; font-size:13.5px; width:100%; min-width:0;
+}
+input[type=number],.mono{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+textarea{resize:vertical; min-height:52px}
+input:hover,select:hover,textarea:hover{border-color:var(--ail-blue-mid)}
+
+.chk{display:flex; gap:8px; align-items:flex-start; font-size:13px; cursor:pointer; padding:3px 0}
+.chk input{margin:2px 0 0; flex:none; accent-color:var(--ail-blue); width:15px; height:15px}
+
+/* coverage modules */
+.mod{border:1px solid var(--line); border-radius:8px; margin-bottom:9px; overflow:hidden; background:var(--panel)}
+.mod.on{border-color:var(--ail-blue); box-shadow:inset 3px 0 0 var(--ail-blue)}
+.mod-h{display:flex; gap:9px; align-items:center; padding:10px 12px; cursor:pointer; user-select:none}
+.mod-h input{accent-color:var(--ail-blue); width:15px;height:15px; flex:none}
+.mod-h .nm{font-weight:600; font-size:13.5px}
+.mod-h .fm{font-size:10.5px; color:var(--text-3); font-family:"IBM Plex Mono",monospace; margin-left:auto}
+.mod-b{padding:0 12px 13px; display:none; border-top:1px solid var(--line-soft); padding-top:12px}
+.mod.on .mod-b{display:block}
+
+.hint{font-size:11.5px; color:var(--text-2); margin:8px 0 0; line-height:1.45}
+.hint.warn{color:var(--amber)}
+.scope-row{margin:9px 0 2px}
+.scope-row > span{font-size:11.5px; color:var(--text-2); font-weight:500; display:block; margin-bottom:4px}
+.seg{display:grid; grid-template-columns:1fr 1fr; gap:5px}
+.seg button{
+  border:1px solid var(--line); background:var(--panel-2); border-radius:6px;
+  padding:6px 7px; font-size:11.5px; cursor:pointer; text-align:center; line-height:1.25;
+}
+.seg button[aria-pressed="true"]{background:var(--ail-blue); border-color:var(--ail-blue); color:#fff; font-weight:600}
+.seg button:hover:not([aria-pressed="true"]){border-color:var(--ail-blue-mid)}
+.covline{font-size:9.6pt; color:var(--doc-ink2); margin:-6px 0 13px}
+.covline strong{color:var(--ail-blue)}
+.fhead{
+  font-size:10.5px; font-weight:600; letter-spacing:1px; text-transform:uppercase;
+  color:var(--ail-blue); margin:12px 0 7px; padding-bottom:4px; border-bottom:1px solid var(--line-soft);
+}
+.mod-b > .fhead:first-child{ margin-top:0; }
+.cl-per{min-width:0}
+.cl-meta{font-size:9.2pt; color:var(--doc-ink2); margin-top:2px}
+.kidrow{display:grid; grid-template-columns:1fr 32px; gap:7px; padding:9px 10px;
+  border:1px solid var(--line); border-radius:7px; margin-bottom:7px; background:var(--panel-2)}
+.kidrow .kf{display:grid; gap:6px; min-width:0}
+.kidrow .kg{display:grid; grid-template-columns:1fr 1fr; gap:6px}
+.kidx{border:1px solid var(--line); background:transparent; border-radius:6px; cursor:pointer;
+  color:var(--text-3); font-size:16px; line-height:1; align-self:start; padding:7px 0}
+.kidx:hover{border-color:#B4231F; color:#B4231F}
+.btn-sm{padding:8px 11px; font-size:12.5px; width:100%}
+.kidnone{font-size:11.5px; color:var(--text-3); padding:2px 0 9px}
+
+.btn{
+  border:1px solid var(--line); background:var(--panel-2); border-radius:7px;
+  padding:9px 13px; font-weight:600; font-size:13.5px; cursor:pointer; text-align:center;
+}
+.btn:hover{border-color:var(--ail-blue-mid)}
+.btn-p{background:var(--ail-blue); border-color:var(--ail-blue); color:#fff; padding:11px 13px}
+.btn-p:hover{background:var(--ail-blue-dk); border-color:var(--ail-blue-dk)}
+.btn-row{display:flex; gap:8px}
+.btn-row .btn{flex:1}
+
+/* ═══════ preview stage ═══════ */
+.stage{padding:26px; overflow-x:auto}
+.stage-bar{
+  display:flex; align-items:center; gap:12px; margin:0 auto 16px; max-width:8.5in;
+  font-size:12px; color:var(--text-2);
+}
+.stage-bar .pill{
+  background:var(--panel); border:1px solid var(--line); border-radius:20px;
+  padding:3px 11px; font-weight:600; font-size:11.5px;
+}
+.stage-bar .sp{margin-left:auto}
+
+.doc{margin:0 auto; width:8.5in; display:flex; flex-direction:column; gap:20px}
+
+/* ═══════ the illustration (paper) ═══════ */
+.pg{
+  width:8.5in; height:11in; background:var(--paper); color:var(--doc-ink);
+  font-family:"IBM Plex Sans",sans-serif; font-size:11.2pt; line-height:1.5;
+  display:flex; flex-direction:column; overflow:hidden;
+  box-shadow:0 1px 3px rgba(16,32,48,.14), 0 8px 24px rgba(16,32,48,.10);
+}
+.pg-in{padding:0 .62in .42in; display:flex; flex-direction:column; flex:1}
+
+.band{background:var(--doc-blue); color:#fff; padding:15px .62in 14px; display:flex; justify-content:space-between; align-items:center}
+.band .co{font-family:"Source Serif 4",Georgia,serif; font-size:17pt; font-weight:700; line-height:1.05}
+.band .co small{display:block; font-family:"IBM Plex Sans",sans-serif; font-size:8pt; font-weight:400; letter-spacing:2.6px; text-transform:uppercase; opacity:.9; margin-top:3px}
+.band .meta{text-align:right; font-size:8.6pt; line-height:1.5; opacity:.95}
+.band .meta strong{font-size:9.6pt; display:block}
+
+.abar{background:var(--doc-tint); border-bottom:1px solid var(--doc-rule); padding:7px .62in; font-size:8.5pt; color:var(--doc-ink2); display:flex; justify-content:space-between; gap:14px}
+.abar strong{color:var(--doc-blue)}
+
+.pg h1{font-family:"Source Serif 4",Georgia,serif; font-size:24pt; line-height:1.14; color:var(--doc-blue); margin:22px 0 5px; font-weight:700; letter-spacing:-.3px; text-wrap:balance}
+.pg .sub1{font-size:11.5pt; color:var(--doc-ink2); margin:0 0 20px}
+.pg h2{font-family:"Source Serif 4",Georgia,serif; font-size:16pt; color:var(--doc-blue); margin:20px 0 3px; font-weight:700}
+.pg .rule{height:3px; background:var(--doc-green); width:56px; margin:0 0 15px}
+.pg h3{font-size:11.3pt; color:var(--doc-blue); margin:0 0 6px; font-weight:600}
+.pg p{margin:0 0 10px}
+.lede{font-size:11.6pt; line-height:1.55}
+
+.client{background:var(--doc-blue-lt); border-left:4px solid var(--doc-blue); border-radius:0 11px 11px 0; padding:15px 20px; margin-bottom:20px; display:flex; gap:30px; flex-wrap:wrap; box-shadow:0 1px 2px rgba(16,42,66,.05)}
+.client .lbl{font-size:8pt; text-transform:uppercase; letter-spacing:1px; color:var(--doc-ink2); margin-bottom:1px}
+.client .val{font-size:12.2pt; font-weight:700; color:var(--doc-blue)}
+
+.cards{display:flex; gap:15px; margin-bottom:18px; flex-wrap:wrap}
+.card{
+  flex:1 1 240px; background:#fff;
+  border:1px solid var(--doc-rule); border-top:4px solid var(--doc-blue);
+  border-radius:11px; padding:14px 16px 15px;
+  box-shadow:0 1px 2px rgba(16,42,66,.07), 0 5px 14px -4px rgba(16,42,66,.11);
+}
+.card.g{border-top-color:var(--doc-green)}
+.card .kick{font-size:8pt; text-transform:uppercase; letter-spacing:1.2px; color:var(--doc-ink2); margin-bottom:4px}
+.card .cnm{font-family:"Source Serif 4",Georgia,serif; font-size:13pt; font-weight:700; color:var(--doc-blue); line-height:1.2}
+.card .cfm{font-size:8.5pt; color:var(--doc-ink2); margin:2px 0 9px}
+.card ul{margin:0; padding-left:15px; font-size:10.2pt; line-height:1.45}
+.card li{margin-bottom:4px}
+.card li::marker{color:var(--doc-green)}
+.cards.c3{gap:11px}
+.cards.c3 .card{flex:1 1 30%; min-width:0; padding:11px 13px 12px; border-radius:10px}
+.cards.c3 .cnm{font-size:11.6pt; line-height:1.15}
+.cards.c3 .cfm{font-size:7.6pt; margin:2px 0 7px}
+.cards.c3 .kick{font-size:7.2pt; margin-bottom:3px}
+.cards.c3 ul{font-size:9.1pt; line-height:1.35; padding-left:13px}
+.cards.c3 li{margin-bottom:3px}
+.cards.tight .card{padding:9px 11px 10px}
+.cards.tight .cnm{font-size:10.8pt}
+.cards.tight ul{font-size:8.5pt; line-height:1.3}
+.client.tight{padding:11px 16px; gap:22px; margin-bottom:14px}
+.client.tight .val{font-size:11pt}
+.client.tight .cl-meta{font-size:8.4pt}
+.cards.tiny .card{padding:7px 9px 8px; border-radius:9px}
+.cards.tiny .cnm{font-size:10pt; line-height:1.1}
+.cards.tiny .cfm{font-size:7pt; margin:1px 0 5px}
+.cards.tiny ul{font-size:8pt; line-height:1.28; padding-left:12px}
+.cards.tiny li{margin-bottom:2px}
+.pg.compact .pg-in{font-size:10.5pt}
+.pg.compact h2{margin:14px 0 3px; font-size:15pt}
+.pg.compact .rule{margin-bottom:11px}
+.pg.compact p{margin:0 0 7px}
+.pg.compact .lede{font-size:10.8pt}
+.pg.compact table{margin-bottom:9px; font-size:9.9pt}
+.pg.compact tbody td{padding:6px 9px}
+.pg.compact thead th{padding:6px 9px}
+.pg.compact .note,.pg.compact .gnote{padding:10px 14px; margin-bottom:10px; font-size:9.7pt}
+.pg.compact .sub{font-size:8.8pt}
+.pg.compact h1{font-size:21pt; margin:16px 0 4px}
+.pg.compact .client{padding:11px 16px; margin-bottom:13px}
+
+.prem{background:var(--doc-blue); color:#fff; border-radius:11px; padding:18px 24px; display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:15px; box-shadow:0 2px 4px rgba(16,42,66,.14), 0 8px 20px -6px rgba(16,42,66,.20)}
+.prem .pl{font-size:9pt; text-transform:uppercase; letter-spacing:1.4px; opacity:.85; margin-bottom:2px}
+.prem .pa{font-family:"Source Serif 4",Georgia,serif; font-size:31pt; font-weight:700; line-height:1; font-variant-numeric:tabular-nums}
+.prem .pa span{font-size:12pt; font-weight:400; opacity:.85}
+.prem .ps{font-size:9.8pt; text-align:right; line-height:1.6; opacity:.95}
+
+.pg table{width:100%; border-collapse:collapse; font-size:10.5pt; margin-bottom:13px}
+.pg thead th{background:var(--doc-blue); color:#fff; text-align:left; padding:8px 11px; font-size:9.2pt; font-weight:600; text-transform:uppercase; letter-spacing:.6px}
+.pg thead th:first-child{border-radius:9px 0 0 0}
+.pg thead th:last-child{border-radius:0 9px 0 0}
+.pg thead th.n{text-align:right}
+.pg tbody td{padding:8px 11px; border-bottom:1px solid var(--doc-rule); vertical-align:top}
+.pg tbody tr:nth-child(even) td{background:var(--doc-tint)}
+.pg td.n{text-align:right; font-weight:600; color:var(--doc-blue); white-space:nowrap; font-variant-numeric:tabular-nums}
+.pg td.b{font-weight:600}
+.sub{font-weight:400; font-size:9.3pt; color:var(--doc-ink2); line-height:1.35; margin-top:2px}
+.mult{font-weight:400; color:var(--doc-ink2)}
+.tnote{font-size:9pt; color:var(--doc-ink2); margin:-5px 0 14px; line-height:1.45}
+.blank{color:var(--doc-ink2); font-weight:400; letter-spacing:.5px}
+
+.note{background:var(--doc-blue-lt); border-left:4px solid var(--doc-blue-mid); border-radius:0 10px 10px 0; padding:13px 17px; margin-bottom:14px; font-size:10.3pt}
+.gnote{background:var(--doc-green-lt); border-left:4px solid var(--doc-green); border-radius:0 10px 10px 0; padding:13px 17px; margin-bottom:14px; font-size:10.3pt}
+.note p:last-child,.gnote p:last-child{margin:0}
+
+.excl{display:flex; gap:22px; margin-bottom:4px; flex-wrap:wrap}
+.excl ul{margin:0; padding-left:16px; font-size:10pt; line-height:1.45; flex:1 1 46%}
+.excl li{margin-bottom:4px}
+
+.sp{flex:1}
+.foot{border-top:2px solid var(--doc-blue); padding-top:8px; margin-top:13px; font-size:7.8pt; color:var(--doc-ink2); line-height:1.45; display:flex; justify-content:space-between; gap:20px}
+.foot .pgn{white-space:nowrap; font-weight:700; color:var(--doc-blue)}
+
+.legal{font-size:8.7pt; color:var(--doc-ink2); line-height:1.5}
+.legal p{margin:0 0 8px}
+.legal strong{color:var(--doc-ink)}
+.ack{border:1px solid var(--doc-rule); border-radius:10px; background:var(--doc-tint); padding:12px 17px; margin-top:16px; font-size:9.6pt}
+.sig{display:flex; gap:40px; margin-top:20px}
+.sig div{flex:1; border-top:1px solid var(--doc-ink2); padding-top:6px; font-size:9pt; color:var(--doc-ink2)}
+.contact{background:var(--doc-blue); color:#fff; border-radius:11px; padding:17px 22px; margin-top:14px; box-shadow:0 2px 4px rgba(16,42,66,.14)}
+.contact .cn{font-family:"Source Serif 4",Georgia,serif; font-size:14pt; font-weight:700}
+.contact .cr{font-size:9.3pt; opacity:.85; margin:1px 0 8px}
+.contact .cl{font-size:10pt; line-height:1.7}
+.contact .cl em{opacity:.7; font-style:normal}
+
+/* ═══════ print ═══════ */
+body.exporting .pg{box-shadow:none !important}
+
+@media print{
+  @page{size:Letter; margin:0}
+  .rail,.stage-bar{display:none !important}
+  .shell{display:block}
+  .stage{padding:0; overflow:visible}
+  .doc{width:auto; gap:0}
+  .pg{box-shadow:none; page-break-after:always; width:8.5in; height:11in}
+  .pg:last-child{page-break-after:auto}
+  body{background:#fff}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}
+.stklist{margin:14px 0;border:1px solid var(--line);border-radius:10px;padding:6px 16px;background:#fff}
+.stkline{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.stkline:last-child{border-bottom:none}
+.stkline.total{font-weight:800;font-size:16px}
+.stkreveal{text-align:center;margin:18px 0 6px;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2)}
+.rlab{font-size:11px;letter-spacing:2px;font-weight:700;color:var(--muted,#62727E)}
+.rbig{font-size:44px;font-weight:800;color:var(--ink,#1B2A33);margin:6px 0}
+.rsmall{font-size:13px;color:var(--muted,#62727E)}
 .guion p{font-size:13px;margin:8px 0;line-height:1.55;color:#33414b}
-@media(max-width:900px){.shell{grid-template-columns:1fr}.rail{height:auto;position:static}.stage{padding:12px}.doc{transform-origin:top left}.cards,.clientbox,.focus{grid-template-columns:1fr}.slide{align-items:flex-start;padding:24px 18px}.p-client,.help{display:none}}
-@media print{.rail,.preview-top{display:none}.shell{display:block}.stage{padding:0}.doc{box-shadow:none}}
-
-/* ====== Resumen de valor familiar ====== */
-.family-value{
-  margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px
-}
-.valuebox{
-  border:1px solid #D8E2E7;background:#FAFCFD;border-radius:11px;padding:14px
-}
-.valuebox .vlabel{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#7D8A92}
-.valuebox .vbig{font:700 24px "Source Serif 4",serif;color:var(--blue);margin-top:4px}
-.valuebox .vsmall{font-size:10px;color:#74838C;line-height:1.4;margin-top:4px}
-
-.p-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:25px}
-.p-metric{
-  background:#fff;border:1px solid #E3E6E4;border-radius:20px;padding:20px;
-  box-shadow:0 12px 30px rgba(44,66,77,.05)
-}
-.p-metric .mk{font-size:10px;text-transform:uppercase;letter-spacing:1.3px;color:#849299;font-weight:800}
-.p-metric .mv{font:700 clamp(27px,3.5vw,44px) "Source Serif 4",serif;color:#00558C;margin:5px 0}
-.p-metric .md{font-size:13px;color:#6C7C84;line-height:1.45}
-.compare-card{
-  margin-top:22px;background:#FFF8ED;border:1px solid #EFD8B8;border-radius:18px;padding:18px 20px;
-  color:#5E4A34;font-size:16px;line-height:1.5
-}
-.compare-card strong{color:#B76F2D}
-@media(max-width:820px){
-  .family-value,.p-metrics{grid-template-columns:1fr}
-}
-
-
-/* ====== V4: Familia, beneficiario y gran total ====== */
-.dynamic-list{display:grid;gap:7px;margin-top:8px}
-.dynamic-row{display:grid;grid-template-columns:1fr 34px;gap:7px}
-.dynamic-row button{
-  border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;color:#9B3B35
-}
-.add-mini{
-  margin-top:7px;width:100%;border:1px dashed #AABBC5;background:#F8FBFC;
-  border-radius:8px;padding:8px;cursor:pointer;color:#315365;font-weight:700
-}
-.total-hero{
-  text-align:center;padding:clamp(28px,5vw,60px);border-radius:36px;
-  background:linear-gradient(145deg,#12384D,#00558C 58%,#0B6FA4);
-  box-shadow:0 28px 75px rgba(0,85,140,.25);color:#fff
-}
-.total-hero .tk{
-  text-transform:uppercase;letter-spacing:2.3px;font-size:12px;
-  font-weight:800;color:#D8EDF6
-}
-.total-hero .tv{
-  font:700 clamp(72px,12vw,160px)/.88 "Source Serif 4",serif;
-  letter-spacing:-5px;margin:18px 0 16px;color:#fff;text-shadow:0 4px 25px rgba(0,0,0,.13)
-}
-.total-hero .ts{font-size:clamp(18px,2vw,25px);color:#DDECF2;max-width:850px;margin:auto;line-height:1.45}
-.total-breakdown{
-  margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px
-}
-.total-piece{
-  background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.17);
-  border-radius:17px;padding:15px;text-align:left
-}
-.total-piece small{display:block;color:#BFD6E1;font-size:10px;text-transform:uppercase;letter-spacing:1px}
-.total-piece b{display:block;font-size:22px;margin-top:4px}
-.total-piece span{display:block;font-size:11px;color:#CFE0E7;margin-top:3px;line-height:1.35}
-.family-names{
-  margin-top:18px;background:#fff;border:1px solid #E3E5E1;border-radius:18px;
-  padding:18px 20px;color:#50636C
-}
-.family-names b{color:#244A60}
-.beneficiary-box{
-  margin-top:16px;background:#EEF6F9;border:1px solid #D2E4EB;border-radius:17px;padding:16px 18px;
-  color:#45606D
-}
-.beneficiary-box strong{color:#00558C}
-
-
-/* ===== V7: página completa de comparación ===== */
-.compare-stage{
-  min-height:70vh;display:flex;flex-direction:column;justify-content:center
-}
-.compare-big{
-  font:700 clamp(70px,11vw,150px)/.9 "Source Serif 4",serif;
-  color:#00558C;letter-spacing:-4px;margin:12px 0
-}
-.compare-person{
-  font-size:clamp(22px,3vw,38px);color:#315365;font-weight:700
-}
-.compare-vs{
-  display:grid;grid-template-columns:1fr auto 1fr;gap:22px;align-items:center;
-  margin-top:34px
-}
-.compare-side{
-  background:#fff;border:1px solid #E2E6E4;border-radius:24px;padding:26px;
-  text-align:center;box-shadow:0 14px 36px rgba(44,66,77,.06)
-}
-.compare-side .num{
-  font:700 clamp(36px,5vw,64px) "Source Serif 4",serif;color:#173D52
-}
-.compare-side .desc{font-size:16px;color:#677A83;margin-top:5px}
-.compare-eq{font:700 30px "Source Serif 4",serif;color:#B76F2D}
-@media(max-width:760px){
-  .compare-vs{grid-template-columns:1fr}
-  .compare-eq{transform:rotate(90deg)}
-}
-
-
-/* ===== V8: comparación semanal protagonista ===== */
-.weekly-hero{
-  min-height:72vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center
-}
-.weekly-hero .wk-label{
-  font-size:13px;letter-spacing:2px;text-transform:uppercase;font-weight:800;color:#B76F2D
-}
-.weekly-hero .wk-value{
-  font:700 clamp(92px,15vw,190px)/.84 "Source Serif 4",serif;
-  color:#00558C;letter-spacing:-6px;margin:20px 0 12px
-}
-.weekly-hero .wk-sub{
-  font-size:clamp(24px,3.3vw,46px);font-weight:700;color:#274D61
-}
-.weekly-hero .wk-family{
-  margin-top:12px;font-size:17px;color:#74858D
-}
-.weekly-compare{
-  width:min(900px,100%);margin-top:38px;display:grid;grid-template-columns:1fr auto 1fr;
-  gap:22px;align-items:center
-}
-.weekly-box{
-  background:#fff;border:1px solid #E0E5E3;border-radius:26px;padding:26px 22px;
-  box-shadow:0 16px 38px rgba(44,66,77,.07)
-}
-.weekly-box .wb-num{
-  font:700 clamp(38px,5vw,68px) "Source Serif 4",serif;color:#173D52
-}
-.weekly-box .wb-copy{
-  margin-top:7px;font-size:17px;line-height:1.4;color:#667A83
-}
-.weekly-eq{
-  font:700 42px "Source Serif 4",serif;color:#B76F2D
-}
-.weekly-message{
-  margin-top:28px;max-width:850px;font:600 clamp(20px,2.5vw,31px)/1.35 "Source Serif 4",serif;
-  color:#315365
-}
-.closing-hero{
-  text-align:center;padding:clamp(36px,6vw,70px);border-radius:34px;
-  background:linear-gradient(145deg,#173D52,#244F66);color:#fff;
-  box-shadow:0 24px 64px rgba(23,61,82,.22)
-}
-.closing-hero .closing-title{
-  font:700 clamp(44px,6vw,82px)/1.03 "Source Serif 4",serif;margin:0;color:#fff
-}
-.closing-hero .closing-title span{color:#F2C28C}
-.closing-hero .closing-sub{
-  margin:24px auto 0;max-width:820px;font-size:clamp(18px,2vw,25px);line-height:1.5;color:#D7E3E8
-}
-@media(max-width:760px){
-  .weekly-compare{grid-template-columns:1fr}
-  .weekly-eq{transform:rotate(90deg)}
-}
-
 </style>
-</head>
-<body>
 
 <div class="shell">
-<aside class="rail">
-  <div class="rail-head"><div class="mark">AIL</div><div><h1>Ilustrador AIL</h1><p>Ilustración + presentación familiar</p></div></div>
-  <div class="rail-body">
-    <section class="sect">
-      <h3>Cliente</h3>
-      <label>Solicitante A<input id="aName" value="David Pacheco"></label>
-      <div class="grid g2" style="margin-top:8px">
-        <label>Sexo<select id="aSex"><option>Hombre</option><option>Mujer</option></select></label>
-        <label>Edad<input id="aAge" type="number" value="31"></label>
+  <!-- ═════════ CONTROL RAIL ═════════ -->
+  <div class="rail">
+    <div class="rail-head">
+      <div class="mark">AIL</div>
+      <div>
+        <h1>Ilustrador AIL</h1>
+        <p>Resumen de beneficios para el cliente</p>
       </div>
-      <label style="margin-top:8px">Cónyuge<input id="bName" value="Valentina"></label>
-      <div class="grid g2" style="margin-top:8px">
-        <label>Sexo<select id="bSex"><option>Mujer</option><option>Hombre</option></select></label>
-        <label>Edad<input id="bAge" type="number" value="29"></label>
-      </div>
-      <label style="margin-top:8px">Número de hijos<input id="kids" type="number" min="0" value="2"></label>
-      <div style="margin-top:9px;font-size:11px;color:#62727E">Nombres de los hijos</div>
-      <div id="kidNames" class="dynamic-list"></div>
-      <button type="button" class="add-mini" id="addKidName">+ Agregar hijo</button>
+    </div>
 
-      <div style="margin-top:12px;font-size:11px;color:#62727E">Mascotas</div>
-      <div id="petNames" class="dynamic-list"></div>
-      <button type="button" class="add-mini" id="addPetName">+ Agregar mascota</button>
-
-      <label style="margin-top:12px">Beneficiario principal
-        <input id="beneficiary" placeholder="Nombre del beneficiario">
-      </label>
-      
-    </section>
-
-    <section class="sect">
-      <h3>Agente</h3>
-      <label>Nombre del agente<input id="agentName" value="José Pacheco"></label>
-      <label style="margin-top:8px">Agencia<input id="agency" value="American Income Life"></label>
-      <div class="grid g2" style="margin-top:8px">
-        <label>N.º de licencia<input id="license" placeholder="Ej. 12345678"></label>
-        <label>NPN<input id="npn" placeholder="Opcional"></label>
-      </div>
-      <div class="grid g2" style="margin-top:8px">
-        <label>Teléfono<input id="phone" type="tel" placeholder="(801) 555-1234"></label>
-        <label>Estado de licencia<input id="licenseState" placeholder="Utah"></label>
-      </div>
-      <label style="margin-top:8px">Correo electrónico<input id="email" type="email" placeholder="agente@correo.com"></label>
-    </section>
-
-    <section class="sect">
-      <h3>Coberturas</h3>
-
-      <div class="cover on" data-cover="whole">
-        <div class="cover-head"><input class="chk covcheck" type="checkbox" checked><b>Gastos Finales</b><small>Whole Life</small></div>
-        <div class="cover-body">
+    <div class="rail-body">
+      <fieldset class="sect">
+        <legend>Asegurado A · principal</legend>
+        <div class="grid">
+          <label class="f"><span>Nombre completo</span><input type="text" id="aN" placeholder="Nombre y apellido"></label>
           <div class="grid g2">
-            <label>Cobertura A<input class="ca" type="number" value="15000"></label>
-            <label>Cobertura B<input class="cb" type="number" value="15000"></label>
+            <label class="f"><span>Sexo</span><select id="aS"><option value="Mujer">Mujer</option><option value="Hombre">Hombre</option></select></label>
+            <label class="f"><span>Tabaco</span><select id="aT"><option value="No usa tabaco">No usa tabaco</option><option value="Usa tabaco">Usa tabaco</option></select></label>
+          </div>
+          <div class="grid g2">
+            <label class="f"><span>Fecha de nacimiento</span><input type="date" id="aD"></label>
+            <label class="f"><span>Edad</span><input type="text" id="aA" readonly></label>
           </div>
         </div>
-      </div>
+      </fieldset>
 
-      <div class="cover on" data-cover="protector">
-        <div class="cover-head"><input class="chk covcheck" type="checkbox" checked><b>Protector</b><small>Vida</small></div>
-        <div class="cover-body">
+      <fieldset class="sect">
+        <legend>Asegurado B · cónyuge <span style="text-transform:none;letter-spacing:0;font-weight:400">(opcional)</span></legend>
+        <div class="grid">
+          <label class="f"><span>Nombre completo</span><input type="text" id="bN" placeholder="Dejar vacío si no aplica"></label>
           <div class="grid g2">
-            <label>Protector A<input class="ca" type="number" value="5000"></label>
-            <label>Protector B<input class="cb" type="number" value="5000"></label>
+            <label class="f"><span>Sexo</span><select id="bS"><option value="Hombre">Hombre</option><option value="Mujer">Mujer</option></select></label>
+            <label class="f"><span>Tabaco</span><select id="bT"><option value="No usa tabaco">No usa tabaco</option><option value="Usa tabaco">Usa tabaco</option></select></label>
+          </div>
+          <div class="grid g2">
+            <label class="f"><span>Fecha de nacimiento</span><input type="date" id="bD"></label>
+            <label class="f"><span>Edad</span><input type="text" id="bA" readonly></label>
           </div>
         </div>
-      </div>
+      </fieldset>
 
-      <div class="cover on" data-cover="adb">
-        <div class="cover-head"><input class="chk covcheck" type="checkbox" checked><b>ADB</b><small>Muerte accidental</small></div>
-        <div class="cover-body">
-          <div class="grid g2">
-            <label>ADB A<input class="ca" type="number" value="200000"></label>
-            <label>ADB B<input class="cb" type="number" value="200000"></label>
-          </div>
+      <fieldset class="sect">
+        <legend>Familia</legend>
+        <div class="grid g2">
+          <label class="f"><span>Número de hijos</span><input type="number" id="kids" value="0" min="0" max="12" step="1"></label>
+          <label class="f"><span>Estado</span><input type="text" id="cState" placeholder="UT" maxlength="2"></label>
         </div>
-      </div>
+      </fieldset>
 
-      <div class="cover" data-cover="term">
-        <div class="cover-head"><input class="chk covcheck" type="checkbox"><b>Protección de Ingresos</b><small>Term</small></div>
-        <div class="cover-body"><label>Cobertura principal<input class="ca" type="number" value="100000"></label></div>
-      </div>
+      <fieldset class="sect">
+        <legend>Coberturas</legend>
+        <div id="mods"></div>
+      </fieldset>
 
-      <div class="cover on" data-cover="accident">
-        <div class="cover-head"><input class="chk covcheck" type="checkbox" checked><b>Protección por Accidente</b><small>A71</small></div>
-        <div class="cover-body">
-          <div class="grid g2">
-            <label>Emergencia sin hospitalización<input class="visit" type="number" value="250"></label>
-            <label>Hospitalización por día<input class="extra" type="number" value="500"></label>
-          </div>
+      <fieldset class="sect">
+        <legend>Prima</legend>
+        <div class="grid g2">
+          <label class="f"><span>Monto total</span><input type="number" id="pAmt" step="0.01" placeholder="0.00"></label>
+          <label class="f"><span>Modo de pago</span>
+            <select id="pMode">
+              <option>Mensual (débito bancario)</option><option>Mensual directo</option>
+              <option>Trimestral</option><option>Semestral</option><option>Anual</option>
+            </select>
+          </label>
         </div>
-      </div>
+        <p class="hint">Escriba la prima tal como la arrojó el sistema de cotización. El ilustrador no la calcula.</p>
+      </fieldset>
 
-      <div class="cover on" data-cover="hospital">
-        <div class="cover-head"><input class="chk covcheck" type="checkbox" checked><b>Indemnización Hospitalaria</b><small>H34</small></div>
-        <div class="cover-body">
-          <div class="grid g2">
-            <label>Beneficio diario<input class="night" type="number" value="100"></label>
-            <label>Beneficio adicional configurado<input class="icu" type="number" value="0"></label>
-          </div>
+      <fieldset class="sect">
+        <legend>Stack de valor familiar</legend>
+        <div class="grid g2">
+          <label class="f"><span>Hospitalización familiar ($)</span><input type="number" id="stk-hosp" data-stk="hosp" value="584000"></label>
+          <label class="f"><span>Gastos finales ($)</span><input type="number" id="stk-final" data-stk="final" value="40000"></label>
         </div>
-      </div>
+        <div class="grid g2">
+          <label class="f"><span>Protector de ingresos ($)</span><input type="number" id="stk-ing" data-stk="ing" value="60000"></label>
+          <label class="f"><span>Muerte accidental padres ($)</span><input type="number" id="stk-acc" data-stk="acc" value="400000"></label>
+        </div>
+        <div class="grid g2">
+          <label class="f"><span>Cobertura niños ($)</span><input type="number" id="stk-ninos" data-stk="ninos" value="40000"></label>
+          <label class="f"><span>Costo mensual real ($)</span><input type="number" id="stk-mensual" data-stk="mensual" value="92.83" step="0.01"></label>
+        </div>
+      </fieldset>
 
-      <div class="cover" data-cover="critical">
-        <div class="cover-head"><input class="chk covcheck" type="checkbox"><b>Enfermedad Crítica</b><small>CI</small></div>
-        <div class="cover-body"><label>Beneficio<input class="ca" type="number" value="25000"></label></div>
-      </div>
+      <fieldset class="sect">
+        <legend>Agente</legend>
+        <div class="grid">
+          <div class="grid g2">
+            <label class="f"><span>Nombre</span><input type="text" id="aName" value="Jose David Pacheco"></label>
+            <label class="f"><span>Título</span><input type="text" id="aTitle" value="Supervisor"></label>
+          </div>
+          <label class="f"><span>Agencia</span><input type="text" id="aAgency" value="Carta Business Group"></label>
+          <div class="grid g2">
+            <label class="f"><span>Teléfono</span><input type="text" id="aPhone" placeholder="(801) 555-0100"></label>
+            <label class="f"><span>Licencia</span><input type="text" id="aLic" placeholder="#"></label>
+          </div>
+          <label class="f"><span>Correo</span><input type="text" id="aEmail" placeholder="agente@ejemplo.com"></label>
+        </div>
+        <p class="hint">Sus datos se guardan en este navegador para la próxima cotización.</p>
+      </fieldset>
 
-      <div class="cover" data-cover="cancer">
-        <div class="cover-head"><input class="chk covcheck" type="checkbox"><b>Cáncer</b><small>Complementario</small></div>
-        <div class="cover-body"><label>Beneficio destacado<input class="ca" value="Beneficios según protección seleccionada"></label></div>
-      </div>
+      <fieldset class="sect">
+        <legend>Guion de revelación</legend>
+        <div class="guion">
+          <p><b>1. Anclaje:</b> "¿Cuánto paga de seguro de carro al mes?" (≈ $270/mes) — eso solo protege el carro.</p>
+          <p><b>2. Expectativa:</b> "La mayoría piensa que esto cuesta $200–$300 al mes."</p>
+          <p><b>3. Revelación:</b> muestra el número grande de abajo y desglósalo por persona y por semana.</p>
+          <p><b>4. Cierre suave:</b> "¿Quiere ser tomado en cuenta para el programa?" — y silencio.</p>
+        </div>
+      </fieldset>
+    </div>
 
-      <div class="cover" data-cover="headstart">
-        <div class="cover-head"><input class="chk covcheck" type="checkbox"><b>HeadStart — Gastos Finales</b><small>HeadStart</small></div>
-        <div class="cover-body"><label>Cobertura por hijo<input class="ca" type="number" value="10000"></label></div>
+    <div class="rail-foot">
+      <button class="btn btn-p" id="doPdf">Descargar PDF</button>
+      <div class="btn-row">
+        <button class="btn" id="doHtml" title="Archivo que se abre e imprime en su navegador — calidad vectorial">Versión para imprimir</button>
+        <button class="btn" id="doSaveAgent">Guardar agente</button>
       </div>
-    </section>
-
-    <section class="sect">
-      <h3>Inversión y comparación</h3>
-      <div class="grid g2">
-        <label>Total<input id="premium" type="number" step=".01" value="136"></label>
-        <label>Frecuencia<select id="mode"><option>mensual</option><option>quincenal</option><option>semanal</option><option>anual</option></select></label>
-      </div>
-      <div class="grid g2" style="margin-top:8px">
-        <label>Eventos/días Accidente para total<input id="accidentDays" type="number" min="0" value="36"></label>
-        <label>Días Hospital para total<input id="hospitalDays" type="number" min="0" value="14"></label>
-      </div>
-      <div class="grid g2" style="margin-top:8px">
-        <label>Días beneficio diario para total<input id="dailyBenefitDays" type="number" min="0" value="365"></label>
-        <label>Beneficio diario adicional<input id="dailyBenefit" type="number" min="0" value="500"></label>
-      </div>
-      <div class="grid g2" style="margin-top:8px">
-        <label>Valor referencia<input id="compareValue" type="number" step=".01" min=".01" value="7"></label>
-        <label>Comparar con<input id="compareLabel" value="una comida rápida sencilla"></label>
-      </div>
-
-      <div style="font-size:10px;color:#7A8993;margin-top:6px">La comparación usa el valor de referencia que ingreses y no representa el valor de un producto específico.</div>
-    </section>
-
-    <section class="sect">
-      <h3>Stack de valor familiar</h3>
-      <div class="grid g2">
-        <label>Hospitalización familiar ($)<input id="stk-hosp" type="number" value="584000"></label>
-        <label>Gastos finales ($)<input id="stk-final" type="number" value="40000"></label>
-      </div>
-      <div class="grid g2" style="margin-top:8px">
-        <label>Protector de ingresos ($)<input id="stk-ing" type="number" value="60000"></label>
-        <label>Muerte accidental padres ($)<input id="stk-acc" type="number" value="400000"></label>
-      </div>
-      <div class="grid g2" style="margin-top:8px">
-        <label>Cobertura niños ($)<input id="stk-ninos" type="number" value="40000"></label>
-        <label>Costo mensual real ($)<input id="stk-mensual" type="number" step="0.01" value="92.83"></label>
-      </div>
-    </section>
-
-    <section class="sect">
-      <h3>Guion de revelación</h3>
-      <div class="guion">
-        <p><b>1. Anclaje:</b> "¿Cuánto paga de seguro de carro al mes?" (≈ $270/mes) — eso solo protege el carro.</p>
-        <p><b>2. Expectativa:</b> "La mayoría piensa que esto cuesta $200–$300 al mes."</p>
-        <p><b>3. Revelación:</b> muestra el número grande de abajo y desglósalo por persona y por semana.</p>
-        <p><b>4. Cierre suave:</b> "¿Quiere ser tomado en cuenta para el programa?" — y silencio.</p>
-      </div>
-    </section>
-  </div>
-
-  <div class="rail-foot">
-    <button class="btn present" id="presentBtn">▶ Presentar al cliente</button>
-    <button class="btn primary" id="pdfBtn">Descargar PDF</button>
-    <div class="btn-row">
-      <button class="btn" onclick="window.print()">Imprimir</button>
-      <button class="btn" id="resetBtn">Restablecer</button>
+      <button class="btn" id="doReset">Limpiar</button>
+      <p class="hint" id="dlMsg" style="margin:0"></p>
     </div>
   </div>
-</aside>
 
-<main class="stage">
-  <div class="preview-top"><span>Vista previa de la ilustración</span><span>Se actualiza automáticamente</span></div>
-  <div class="doc" id="doc">
-    <div class="band"><div class="co">American Income Life<small>Resumen ilustrativo de protección</small></div><div id="pdfAgent"></div></div>
-    <div class="paper">
-      <h1>Resumen de protección familiar</h1>
-      <div class="sub">Preparado para ayudarte a conversar sobre las necesidades de protección de tu familia.</div>
-      <div class="clientbox">
-        <div><div class="lbl">Solicitante</div><div class="val" id="pdfA"></div></div>
-        <div><div class="lbl">Cónyuge</div><div class="val" id="pdfB"></div></div>
-        <div><div class="lbl">Hijos</div><div class="val" id="pdfKids"></div></div>
-      </div>
-      <div class="cards" id="pdfCards"></div>
-      <div class="summary"><div><div class="lbl">Valor ingresado</div><div>Protección actual</div></div><b id="pdfPremium"></b></div>
-      <div class="family-value">
-        <div class="valuebox">
-          <div class="vlabel">Valor semanal por persona</div>
-          <div class="vbig" id="pdfWeeklyPerson">$0.00</div>
-          <div class="vsmall" id="pdfWeeklyDesc"></div>
-        </div>
-        <div class="valuebox">
-          <div class="vlabel">PROTECCIÓN TOTAL ILUSTRATIVA</div>
-          <div class="vbig" id="pdfFamilyTotal" style="font-size:34px">$0</div>
-          <div class="vsmall">Suma ilustrativa de los beneficios cuantificables seleccionados. No todos necesariamente pueden pagarse simultáneamente.</div>
-        </div>
-      </div>
-      <div class="stackval">
-        <div class="vlabel">STACK DE VALOR FAMILIAR</div>
-        <div id="pdfStack"></div>
-      </div>
-      <div class="disclaimer">Este documento es un resumen ilustrativo y no constituye una protección ni una garantía de cobertura. Los beneficios, primas, elegibilidad, exclusiones, limitaciones y condiciones reales dependen de la solicitud, suscripción y documentos oficiales emitidos por la compañía.</div>
+  <!-- ═════════ PREVIEW ═════════ -->
+  <div class="stage">
+    <div class="stage-bar">
+      <span class="pill" id="pgCount">— páginas</span>
+      <span>Vista previa · se actualiza al escribir</span>
+      <span id="fitMsg" style="color:var(--amber); font-weight:600"></span>
+      <span class="sp"></span>
+      <span>En el diálogo de impresión elija <strong>Guardar como PDF</strong></span>
     </div>
-  </div>
-</main>
-</div>
-
-<div id="pres" aria-hidden="true">
-  <div class="p-top">
-    <div class="p-brand">AIL · Protección familiar</div>
-    <div class="p-client" id="pClient"></div>
-    <div class="sp"></div>
-    <div class="dots" id="dots"></div>
-    <button class="close" id="closePres">Cerrar ✕</button>
-  </div>
-  <div class="p-stage" id="pStage"></div>
-  <div class="p-foot">
-    <button class="pbtn" id="prev">← Anterior</button>
-    <div class="help">← → avanzar · F pantalla completa</div>
-    <button class="pbtn primary" id="next">Siguiente →</button>
+    <div class="doc" id="doc"></div>
   </div>
 </div>
 
 <script>
-const $=id=>document.getElementById(id);
-const money=n=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(Number(n||0));
-const val=id=>$(id).value;
-const first=s=>(String(s||"").trim().split(/\s+/)[0]||"");
-const safe=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money = n => "$" + Number(n||0).toLocaleString("en-US",{maximumFractionDigits:0});
+const money2 = n => "$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2});
 
-document.querySelectorAll(".cover-head").forEach(h=>{
-  h.addEventListener("click",e=>{
-    if(e.target.classList.contains("covcheck")) return;
-    const box=h.closest(".cover"), cb=box.querySelector(".covcheck");
-    cb.checked=!cb.checked; box.classList.toggle("on",cb.checked); render();
-  });
+/* ───── a quién cubre ───── */
+const SCOPES = {
+  all:    {btn:"Toda la familia",   doc:"Toda la familia"},
+  prim:   {btn:"Solo el principal", doc:"Solo el asegurado principal"},
+  spouse: {btn:"Principal y cónyuge", doc:"El asegurado principal y su cónyuge"},
+  kids:   {btn:"Principal e hijos",   doc:"El asegurado principal y sus hijos"}
+};
+const SCOPE_KEYS = ["all","prim","spouse","kids"];
+
+const TERM_PLANS = ["10 años renovable y convertible","20 años nivelado","Término hasta los 65"];
+
+/* ───── módulos ───── */
+const MODULES = [
+  { id:"wl", form:"Whole Life", name:"Gastos Finales", on:true, group:"Vida",
+    fields:[
+      {t:"head", l:"Asegurado principal"},
+      {k:"face", l:"Monto de cobertura", t:"number", v:15000, step:1000, min:1000},
+      {k:"tir",  l:"Terminal Illness Rider", t:"check", v:true},
+      {k:"wp",   l:"Waiver of Premium", t:"check", v:false},
+      {k:"adb",  l:"Muerte accidental (ADB)", t:"check", v:false, sub:{k:"adbAmt", l:"Monto ADB", t:"number", v:10000, min:1000, max:200000, step:1000}},
+      {t:"head", l:"Cónyuge"},
+      {k:"faceS", l:"Monto de cobertura", t:"number", v:0, step:1000, min:0},
+      {k:"tirS",  l:"Terminal Illness Rider", t:"check", v:false},
+      {k:"wpS",   l:"Waiver of Premium", t:"check", v:false},
+      {k:"adbS",  l:"Muerte accidental (ADB)", t:"check", v:false, sub:{k:"adbAmtS", l:"Monto ADB", t:"number", v:10000, min:1000, max:200000, step:1000}},
+      {t:"head", l:"Hijos"},
+      {k:"chr",  l:"Children Rider — $10,000 por cada hijo", t:"check", v:false}
+    ]},
+  { id:"hs", form:"HeadStart", name:"HeadStart — Gastos Finales", on:false, group:"Vida",
+    fields:[{k:"kids", t:"kidlist"}]},
+  { id:"term", form:"Term", name:"Protección de Ingresos", on:false, group:"Vida",
+    fields:[
+      {k:"face",  l:"Asegurado principal", t:"number", v:120000, step:1000, min:1000},
+      {k:"faceS", l:"Cónyuge", t:"number", v:0, step:1000, min:0},
+      {k:"plan",  l:"Plazo", t:"select", opts:TERM_PLANS, v:"10 años renovable y convertible"}
+    ]},
+  { id:"a71", form:"A71", name:"Protección por Accidente", on:true, group:"Suplementales", scope:"all",
+    fields:[
+      {k:"amt", l:"Unidades", t:"select", opts:["500","400","300","200","100"], v:"500"},
+      {k:"rec", l:"Rider de Recuperación por Accidente", t:"check", v:false}
+    ]},
+  { id:"h34", form:"H34", name:"Indemnización Hospitalaria", on:false, group:"Suplementales", scope:"all",
+    fields:[
+      {k:"amt", l:"Beneficio diario", t:"select", opts:["50","75","100","150"], v:"100", pfx:"$"},
+      {k:"bm200", l:"Rider de Recuperación BM-200", t:"check", v:false}
+    ]},
+  { id:"c20", form:"C20", name:"Cáncer — Suma Global", on:false, group:"Suplementales", scope:"all",
+    fields:[{k:"amt", l:"Beneficio", t:"select", opts:["10000","25000","50000"], v:"25000", pfx:"$"}]},
+  { id:"c10", form:"C10", name:"Cáncer — Indemnización", on:false, group:"Suplementales", scope:"all",
+    fields:[{k:"amt", l:"Beneficio diario", t:"select", opts:["100","150","200","300"], v:"200", pfx:"$"}]},
+  { id:"ci", form:"CI", name:"Enfermedad Crítica", on:false, group:"Suplementales", scope:"spouse", noKids:true,
+    fields:[{k:"amt", l:"Beneficio", t:"select", opts:["10000","25000","50000"], v:"25000", pfx:"$"}]},
+  { id:"a74", form:"A74", name:"Accidente con Incapacidad", on:false, group:"Suplementales",
+    fields:[{k:"units", l:"Unidades", t:"select", opts:["1","2"], v:"1"}]}
+];
+
+const S = { mods:{}, stk:{hosp:584000, final:40000, ing:60000, acc:400000, ninos:40000, mensual:92.83} };
+MODULES.forEach(m=>{
+  S.mods[m.id] = {on:m.on};
+  if(m.scope) S.mods[m.id].scope = m.scope;
+  m.fields.forEach(f=>{ if(f.t==="head") return; if(f.t==="kidlist"){ S.mods[m.id].kids=[]; return; } S.mods[m.id][f.k]=f.v; if(f.sub) S.mods[m.id][f.sub.k]=f.sub.v; });
 });
-document.querySelectorAll(".covcheck").forEach(cb=>cb.addEventListener("change",()=>{
-  cb.closest(".cover").classList.toggle("on",cb.checked);render();
-}));
-document.querySelectorAll("input,select,textarea").forEach(el=>el.addEventListener("input",render));
 
-function state(){
-  return {
-    a:{name:val("aName"),sex:val("aSex"),age:val("aAge")},
-    b:{name:val("bName"),sex:val("bSex"),age:val("bAge")},
-    kids:Number(val("kids")||0),
-    agent:val("agentName"),agency:val("agency"),
-    license:val("license"),npn:val("npn"),phone:val("phone"),
-    licenseState:val("licenseState"),email:val("email"),
-    premium:Number(val("premium")||0),mode:val("mode"),
-    accidentDays:Number(val("accidentDays")||0),
-    hospitalDays:Number(val("hospitalDays")||0),
-    dailyBenefitDays:Number(val("dailyBenefitDays")||0),
-    dailyBenefit:Number(val("dailyBenefit")||0),
-    compareValue:Number(val("compareValue")||7),
-    compareLabel:val("compareLabel")||"una comida rápida sencilla",
-    stk:{hosp:Number(val("stk-hosp")||0),final:Number(val("stk-final")||0),ing:Number(val("stk-ing")||0),
-         acc:Number(val("stk-acc")||0),ninos:Number(val("stk-ninos")||0),mensual:Number(val("stk-mensual")||0)},
-    beneficiary:val("beneficiary"),
-    kidNames:[...document.querySelectorAll("#kidNames input")].map(x=>x.value.trim()).filter(Boolean),
-    petNames:[...document.querySelectorAll("#petNames input")].map(x=>x.value.trim()).filter(Boolean)
-  };
+/* ───── rail ───── */
+function fieldHtml(m, f, st){
+  if(f.t==="head") return `<div class="fhead">${esc(f.l)}</div>`;
+  const id = `${m.id}_${f.k}`;
+  const lim = g => `${g.min!=null?`min="${g.min}"`:""} ${g.max!=null?`max="${g.max}"`:""} ${g.step?`step="${g.step}"`:""}`;
+  if(f.t==="kidlist"){
+    const ks = st.kids||[];
+    const rows = ks.map((k,i)=>`<div class="kidrow"><div class="kf">
+      <label class="f"><span>Nombre del hijo</span><input type="text" data-mod="${m.id}" data-kid="${i}" data-kf="name" value="${esc(k.name)}" placeholder="Nombre y apellido"></label>
+      <div class="kg">
+        <label class="f"><span>Fecha de nacimiento</span><input type="date" data-mod="${m.id}" data-kid="${i}" data-kf="dob" value="${esc(k.dob)}"></label>
+        <label class="f"><span>Cobertura</span><input type="number" data-mod="${m.id}" data-kid="${i}" data-kf="amt" value="${esc(k.amt)}" min="1000" step="1000"></label>
+      </div></div>
+      <button type="button" class="kidx" data-delkid="${m.id}" data-i="${i}" title="Quitar este hijo" aria-label="Quitar este hijo">×</button></div>`).join("");
+    return `${rows||`<p class="kidnone">Todavía no hay hijos agregados.</p>`}
+      <button type="button" class="btn btn-sm" data-addkid="${m.id}">+ Agregar hijo</button>`;
+  }
+  if(f.t==="check"){
+    const sub = f.sub ? `<div id="${id}_sub" style="margin:5px 0 6px 23px;${st[f.k]?"":"display:none"}">
+      <label class="f"><span>${esc(f.sub.l)}</span><input type="number" data-mod="${m.id}" data-k="${f.sub.k}" value="${esc(st[f.sub.k])}" ${lim(f.sub)}></label></div>` : "";
+    return `<label class="chk"><input type="checkbox" id="${id}" data-mod="${m.id}" data-k="${f.k}" ${st[f.k]?"checked":""}><span>${esc(f.l)}</span></label>${sub}`;
+  }
+  if(f.t==="select"){
+    return `<label class="f" style="margin-bottom:9px"><span>${esc(f.l)}</span><select data-mod="${m.id}" data-k="${f.k}">${
+      f.opts.map(o=>`<option value="${esc(o)}" ${o===st[f.k]?"selected":""}>${f.pfx?f.pfx+Number(o).toLocaleString("en-US"):esc(o)}</option>`).join("")}</select></label>`;
+  }
+  return `<label class="f" style="margin-bottom:9px"><span>${esc(f.l)}</span><input type="number" data-mod="${m.id}" data-k="${f.k}" value="${esc(st[f.k])}" ${lim(f)}></label>`;
 }
+
+function buildMods(){
+  const groups = ["Vida","Suplementales"];
+  $("#mods").innerHTML = groups.map(g=>{
+    const list = MODULES.filter(m=>m.group===g);
+    return `<div class="sect-h" style="margin-top:${g==="Vida"?0:14}px">${g}</div>` + list.map(m=>{
+      const st = S.mods[m.id];
+      const keys = m.scope ? (m.noKids ? ["all","prim","spouse"] : SCOPE_KEYS) : null;
+      const scopeHtml = keys ? `<div class="scope-row"><span>¿A quién cubre?</span><div class="seg">${
+        keys.map(k=>`<button type="button" data-scope="${m.id}" data-v="${k}" aria-pressed="${st.scope===k}">${esc(SCOPES[k].btn)}</button>`).join("")
+      }</div>${m.noKids?`<p class="hint">Esta póliza cubre un adulto, o un adulto y su cónyuge. No admite hijos.</p>`:""}</div>` : "";
+      return `<div class="mod ${st.on?"on":""}" id="mod_${m.id}">
+        <label class="mod-h"><input type="checkbox" data-toggle="${m.id}" ${st.on?"checked":""}>
+          <span class="nm">${esc(m.name)}</span><span class="fm">${esc(m.form)}</span></label>
+        <div class="mod-b">${m.fields.map(f=>fieldHtml(m,f,st)).join("")}${scopeHtml}</div></div>`;
+    }).join("");
+  }).join("");
+}
+
+function onRailChange(e){
+  const t = e.target;
+  if(t.dataset.toggle){
+    S.mods[t.dataset.toggle].on = t.checked;
+    $("#mod_"+t.dataset.toggle).classList.toggle("on", t.checked);
+    } else if(t.dataset.kid!==undefined){
+    S.mods[t.dataset.mod].kids[+t.dataset.kid][t.dataset.kf] = t.value;
+  } else if(t.dataset.mod){
+    S.mods[t.dataset.mod][t.dataset.k] = t.type==="checkbox" ? t.checked : t.value;
+    const sub = document.getElementById(`${t.dataset.mod}_${t.dataset.k}_sub`);
+    if(sub) sub.style.display = t.checked ? "" : "none";
+  } else return;
+  render();
+}
+
+/* ───── helpers ───── */
+function age(dob){
+  if(!dob) return "";
+  const b = new Date(dob+"T00:00:00"), n = new Date();
+  let a = n.getFullYear()-b.getFullYear();
+  const m = n.getMonth()-b.getMonth();
+  if(m<0 || (m===0 && n.getDate()<b.getDate())) a--;
+  return a>=0 && a<130 ? a : "";
+}
+const fmtDob = d => d ? d.split("-").reverse().join("/") : "—";
+const today = () => new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
+const CN = () => (S.client.aName||"—").toUpperCase();
+const BN = () => (S.client.bName||"").toUpperCase();
+const hasB = () => !!S.client.bName;
+const colB = () => hasB() ? BN() : "Cónyuge";
+const titA = () => S.client.aSex==="Mujer" ? "Asegurada" : "Asegurado";
+const hsKids = () => (S.mods.hs.kids||[]).filter(k=>(k.name||"").trim() || +k.amt);
+const covLine = id => { const s = S.mods[id].scope; return s ? `<p class="covline">Personas cubiertas: <strong>${SCOPES[s].doc}</strong></p>` : ""; };
+
+/* ───── piezas del documento ───── */
+const band = right => `<div class="band"><div class="co">American Income Life<small>Insurance Company</small></div><div class="meta">${right}</div></div>`;
+function abar(n){ const a=S.agent; return `<div class="abar"><div>Preparado por <strong>${esc(a.name)}</strong> · ${esc(a.title)} · ${esc(a.agency)}</div><div>Resumen de Beneficios${n?" · Página "+n:""}</div></div>`; }
+const foot = (t,n,tot) => `<div class="sp"></div><div class="foot"><div>${t}</div><div class="pgn">Página ${n} de ${tot}</div></div>`;
+
 function coverCards(){
-  const out=[];
-  document.querySelectorAll(".cover").forEach(box=>{
-    if(!box.querySelector(".covcheck").checked)return;
-    const type=box.dataset.cover;
-    const q=s=>box.querySelector(s)?.value||"";
-
-    if(type==="whole") out.push({
-      type,name:"Gastos Finales",kick:"Vida",form:"Whole Life",
-      life:true,icon:"WL",
-      li:[
-        q(".ca")?`Asegurado principal: ${money(q(".ca"))}`:"",
-        q(".cb")?`Cónyuge: ${money(q(".cb"))}`:"",
-        "Beneficio por muerte pagado al beneficiario que se nombre."
-      ].filter(Boolean),
-      meaning:"Gastos Finales"
-    });
-
-    // "Protector" is retained only because it is a user-entered amount requested for the total.
-    if(type==="protector") out.push({
-      type,name:"Protector",kick:"Vida",form:"Protector",life:true,icon:"PR",
-      li:[
-        q(".ca")?`Asegurado principal: ${money(q(".ca"))}`:"",
-        q(".cb")?`Cónyuge: ${money(q(".cb"))}`:""
-      ].filter(Boolean),
-      meaning:"Protector"
-    });
-
-    if(type==="adb") out.push({
-      type,name:"Muerte Accidental (ADB)",kick:"Vida",form:"ADB",life:true,icon:"ADB",
-      li:[
-        q(".ca")?`Asegurado principal: ${money(q(".ca"))}`:"",
-        q(".cb")?`Cónyuge: ${money(q(".cb"))}`:"",
-        "Se suma al beneficio si el fallecimiento es por accidente."
-      ].filter(Boolean),
-      meaning:"Muerte Accidental (ADB)"
-    });
-
-    if(type==="term") out.push({
-      type,name:"Protección de Ingresos",kick:"Vida",form:"Term",life:true,icon:"TERM",
-      li:[
-        `Asegurado principal: ${money(q(".ca"))}`,
-        "Protección durante el plazo seleccionado."
-      ],
-      meaning:"Protección de Ingresos"
-    });
-
-    if(type==="accident") out.push({
-      type,name:"Protección por Accidente",kick:"Suplementales",form:"A71",icon:"A71",
-      li:[
-        `Emergencia sin hospitalización: hasta ${money(q(".visit"))}`,
-        `Hospitalización: ${money(q(".extra") || 0)}`,
-        "Cuidados intensivos (UCI): se suma al beneficio de hospitalización."
-      ].filter(Boolean),
-      meaning:"Protección por Accidente"
-    });
-
-    if(type==="hospital") out.push({
-      type,name:"Indemnización Hospitalaria",kick:"Suplementales",form:"H34",icon:"H34",
-      li:[
-        `Beneficio diario: ${money(q(".night"))}`,
-        `Cuidados intensivos (UCI): ${money(q(".icu"))}`
-      ],
-      meaning:"Indemnización Hospitalaria"
-    });
-
-    if(type==="critical") out.push({
-      type,name:"Enfermedad Crítica",kick:"Suplementales",form:"CI",icon:"CI",
-      li:[`Beneficio: ${money(q(".ca"))}`],
-      meaning:"Enfermedad Crítica"
-    });
-
-    if(type==="cancer") out.push({
-      type,name:"Cáncer — Suma Global",kick:"Suplementales",form:"C20",icon:"C20",
-      li:[q(".ca")],
-      meaning:"Cáncer — Suma Global"
-    });
-
-    if(type==="headstart") out.push({
-      type,name:"HeadStart — Gastos Finales",kick:"Vida",form:"HeadStart",life:true,icon:"HS",
-      li:[`Cobertura por hijo: ${money(q(".ca"))}`],
-      meaning:"HeadStart — Gastos Finales"
-    });
-  });
+  const M = S.mods, out = [];
+  const add = (o) => out.push(o);
+  if(M.wl.on){
+    const W=M.wl, f=+W.face||0, fs=+W.faceS||0;
+    const li=[`Asegurado principal · <strong>${money(f)}</strong>`];
+    if(fs) li.push(`Cónyuge · <strong>${money(fs)}</strong>`);
+    if(W.chr) li.push(`<strong>$10,000 por cada hijo</strong>, sin importar cuántos sean`);
+    li.push(`La prima <strong>nunca sube</strong> y la cobertura es de por vida`);
+    li.push(`Acumula <strong>valor en efectivo</strong> que le pertenece`);
+    li.push(`Se paga <strong>directo al beneficiario</strong>, sin pasar por corte`);
+    add({g:1, kick:"Gastos finales", name:"Seguro de Vida Permanente", form:"Whole Life", li});
+  }
+  if(M.hs.on && hsKids().length){
+    const k=hsKids(), tot=k.reduce((s,x)=>s+(+x.amt||0),0);
+    add({g:1, kick:"Los hijos", name:"HeadStart", form:`Gastos Finales · ${k.length} ${k.length===1?"hijo":"hijos"}`, li:[
+      `<strong>${money(tot)}</strong> de cobertura permanente para ${k.length===1?"su hijo":"sus hijos"}`,
+      `La prima queda fija <strong>a la edad que tienen hoy</strong>`,
+      `Acumula <strong>valor en efectivo</strong> que es de ellos`,
+      `Podrán comprar más cobertura <strong>sin preguntas de salud</strong>`]});
+  }
+  if(M.term.on){
+    const f=+M.term.face||0, fs=+M.term.faceS||0;
+    add({g:1, kick:"Protección de ingresos", name:"Seguro de Vida a Término", form:esc(M.term.plan), li:[
+      `Asegurado principal · <strong>${money(f)}</strong>`,
+      `Cónyuge · <strong>${fs?money(fs):"no incluido"}</strong>`,
+      `Cubre los años en que su familia <strong>más depende de su ingreso</strong>`,
+      `<strong>Convertible</strong> a cobertura permanente sin nuevas preguntas de salud`]});
+  }
+  if(M.a71.on){
+    const d=+M.a71.amt;
+    add({kick:"Accidentes", name:"Protección por Accidente", form:`A71 · ${money(d)} diarios · ${SCOPES[M.a71.scope].doc}`, li:[
+      `<strong>${money(d)} por día</strong> de hospitalización por accidente`,
+      `<strong>${money(d)} adicionales</strong> por día en cuidados intensivos`,
+      `Hasta <strong>${money(d/2)}</strong> por atención de emergencia`,
+      `Hasta <strong>${money(d*500)}</strong> por muerte accidental`]});
+  }
+  if(M.h34.on){
+    const d=+M.h34.amt;
+    add({kick:"Hospital", name:"Indemnización Hospitalaria", form:`H34 · ${money(d)} diarios · ${SCOPES[M.h34.scope].doc}`, li:[
+      `<strong>${money(d)} por día</strong> de hospitalización, hasta 365 días`,
+      `Paga por <strong>enfermedad y accidente</strong>`,
+      `Cirugía ambulatoria y atención en casa`,
+      `<strong>${money(d*40)}</strong> por muerte accidental`]});
+  }
+  if(M.c20.on) add({g:1, kick:"Diagnóstico", name:"Cáncer — Suma Global", form:`C20 · ${money(M.c20.amt)} · ${SCOPES[M.c20.scope].doc}`, li:[
+    `<strong>${money(M.c20.amt)} de una sola vez</strong> al primer diagnóstico`,
+    `Se paga <strong>sin necesidad de hospitalización</strong>`,
+    `Usted decide en qué usar el dinero`]});
+  if(M.c10.on) add({g:1, kick:"Diagnóstico", name:"Cáncer — Indemnización", form:`C10 · ${money(M.c10.amt)} diarios · ${SCOPES[M.c10.scope].doc}`, li:[
+    `<strong>${money(M.c10.amt)} por día</strong> de hospitalización por cáncer`,
+    `Paga también el <strong>tratamiento ambulatorio</strong>`,
+    `Hasta 500 días de por vida`]});
+  if(M.ci.on) add({g:1, kick:"Diagnóstico", name:"Enfermedad Crítica", form:`CI · ${money(M.ci.amt)} · ${SCOPES[M.ci.scope].doc}`, li:[
+    `<strong>${money(M.ci.amt)} de una sola vez</strong> al primer diagnóstico cubierto`,
+    `Infarto, derrame, trasplante y más`,
+    `<strong>No cubre cáncer</strong> — esa es póliza aparte`]});
+  if(M.a74.on){
+    const u=+M.a74.units||1;
+    add({kick:"Accidentes", name:"Accidente con Incapacidad", form:`A74 · ${u} unidad${u>1?"es":""}`, li:[
+      `<strong>${money(100*u)} por semana</strong> de incapacidad, hasta 26 semanas`,
+      `Hasta <strong>${money(100*u)}</strong> por atención de emergencia`,
+      `Hasta <strong>${money(50000*u)}</strong> por muerte accidental`]});
+  }
   return out;
 }
-function familyCount(s){
-  return Math.max(1,(s.a.name?1:0)+(s.b.name?1:0)+Math.max(0,s.kids||0));
-}
-function annualPremium(s){
-  const p=Number(s.premium||0);
-  if(s.mode==="mensual") return p*12;
-  if(s.mode==="quincenal") return p*26;
-  if(s.mode==="semanal") return p*52;
-  return p;
-}
-function weeklyPerPerson(s){
-  return annualPremium(s)/52/familyCount(s);
-}
-function money2(n){
-  return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n||0));
-}
-function familyProtectionBreakdown(s,cards){
-  const members=familyCount(s);
-  let items=[], total=0;
 
-  function add(label,value,detail){
-    value=Number(value||0);
-    if(value>0){items.push({label,value,detail});total+=value}
-  }
-
-  const whole=document.querySelector('.cover[data-cover="whole"]');
-  if(whole?.querySelector(".covcheck")?.checked){
-    const a=Number(whole.querySelector(".ca")?.value||0);
-    const b=Number(whole.querySelector(".cb")?.value||0);
-    add("Gastos finales / Whole Life",a+b,`${money(a)} + ${money(b)}`);
-  }
-
-  const protector=document.querySelector('.cover[data-cover="protector"]');
-  if(protector?.querySelector(".covcheck")?.checked){
-    const a=Number(protector.querySelector(".ca")?.value||0);
-    const b=Number(protector.querySelector(".cb")?.value||0);
-    add("Protectores",a+b,`${money(a)} + ${money(b)}`);
-  }
-
-  const adb=document.querySelector('.cover[data-cover="adb"]');
-  if(adb?.querySelector(".covcheck")?.checked){
-    const a=Number(adb.querySelector(".ca")?.value||0);
-    const b=Number(adb.querySelector(".cb")?.value||0);
-    add("ADB",a+b,`${money(a)} + ${money(b)}`);
-  }
-
-  const term=document.querySelector('.cover[data-cover="term"]');
-  if(term?.querySelector(".covcheck")?.checked){
-    const t=Number(term.querySelector(".ca")?.value||0);
-    add("Seguro temporal",t,money(t));
-  }
-
-  const accident=document.querySelector('.cover[data-cover="accident"]');
-  if(accident?.querySelector(".covcheck")?.checked){
-    const visit=Number(accident.querySelector(".visit")?.value||0);
-    const calc=visit*members*Math.max(0,s.accidentDays||0);
-    add("Accidente",calc,`${money(visit)} × ${members} personas × ${s.accidentDays} = ${money(calc)}`);
-  }
-
-  const hospital=document.querySelector('.cover[data-cover="hospital"]');
-  if(hospital?.querySelector(".covcheck")?.checked){
-    const night=Number(hospital.querySelector(".night")?.value||0);
-    const calc=night*members*Math.max(0,s.hospitalDays||0);
-    add("Hospitalización",calc,`${money(night)} × ${members} personas × ${s.hospitalDays} días = ${money(calc)}`);
-  }
-
-  if(s.dailyBenefit>0 && s.dailyBenefitDays>0){
-    const calc=s.dailyBenefit*members*s.dailyBenefitDays;
-    add("Beneficio diario adicional",calc,`${money(s.dailyBenefit)} × ${members} personas × ${s.dailyBenefitDays} días = ${money(calc)}`);
-  }
-
-  const critical=document.querySelector('.cover[data-cover="critical"]');
-  if(critical?.querySelector(".covcheck")?.checked){
-    const amt=Number(critical.querySelector(".ca")?.value||0);
-    add("Enfermedad crítica",amt*members,`${money(amt)} × ${members} personas`);
-  }
-
-  const head=document.querySelector('.cover[data-cover="headstart"]');
-  if(head?.querySelector(".covcheck")?.checked){
-    const amt=Number(head.querySelector(".ca")?.value||0), kids=Math.max(0,s.kids||0);
-    add("Head Start",amt*kids,`${money(amt)} × ${kids} hijos`);
-  }
-
-  return {members,items,total};
-}
-function render(){
-  const s=state(),cards=coverCards();
-  const agentMeta = [
-    s.agency,
-    s.license ? `Lic. ${s.license}${s.licenseState ? " · "+s.licenseState : ""}` : "",
-    s.npn ? `NPN ${s.npn}` : "",
-    s.phone,
-    s.email
-  ].filter(Boolean);
-  $("pdfAgent").innerHTML=`<b>${safe(s.agent)}</b><br><small>${agentMeta.map(safe).join("<br>")}</small>`;
-  $("pdfA").textContent=s.a.name||"—";
-  $("pdfB").textContent=s.b.name||"—";
-  $("pdfKids").textContent=s.kids;
-  $("pdfPremium").textContent=`${money(s.premium)} / ${s.mode}`;
-  const famCalc=familyProtectionBreakdown(s,cards);
-  const wpp=weeklyPerPerson(s);
-  $("pdfWeeklyPerson").textContent=money2(wpp);
-  const cmp=s.compareValue>0 ? wpp/s.compareValue : 0;
-  $("pdfWeeklyDesc").textContent=`${famCalc.members} miembros · equivale aproximadamente a ${cmp.toFixed(1)} × ${s.compareLabel} de ${money2(s.compareValue)} por persona a la semana.`;
-  $("pdfFamilyTotal").textContent=money(famCalc.total);
-  const stk=s.stk,
-    stkRows=[["Hospitalización familiar",stk.hosp],["Gastos finales",stk.final],["Protector de ingresos",stk.ing],["Muerte accidental (padres)",stk.acc],["Cobertura niños",stk.ninos]],
-    stkTotal=stkRows.reduce((a,r)=>a+r[1],0),stkPers=4;
-  $("pdfStack").innerHTML=
-    stkRows.map(r=>`<div class="stk-row"><span>${r[0]}</span><b>${money(r[1])}</b></div>`).join("")+
-    `<div class="stk-row total"><span>Protección total</span><b>${money(stkTotal)}</b></div>
-     <div class="stk-reveal"><div class="vlabel">TODO ESTO POR SOLO</div><div class="vbig">${money2(stk.mensual)}/mes</div>
-     <div class="vsmall">${money2(stk.mensual/stkPers)} por persona &middot; ${money2(stk.mensual/stkPers/4)}/semana por persona</div></div>`;
-  $("pdfCards").innerHTML=cards.length?cards.map(c=>`
-    <div class="card ${c.life?"life":""}">
-      <div class="kick">${c.kick}</div><h3>${c.name}</h3><div class="form">${c.form}</div>
-      <ul>${c.li.map(x=>`<li>${safe(x)}</li>`).join("")}</ul>
-    </div>`).join(""):`<div class="card"><h3>Selecciona una cobertura</h3><p>No hay coberturas activas.</p></div>`;
+/* La portada siempre debe caber en una hoja: al crecer el número de
+   tarjetas se pasa a 3 columnas y se recortan las viñetas. */
+function cardsHtml(cards){
+  const n = cards.length;
+  const cls = n<=4 ? "" : (n<=6 ? " c3" : " c3 tight");
+  const maxLi = n<=4 ? 5 : (n<=6 ? 3 : 2);
+  return `<div class="cards${cls}">${cards.map(c=>
+    `<div class="card${c.g?" g":""}"><div class="kick">${c.kick}</div><div class="cnm">${c.name}</div>
+     <div class="cfm">${c.form}</div><ul>${c.li.slice(0,maxLi).map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join("")}</div>`;
 }
 
-function makeDynamicRow(containerId,value=""){
-  const box=$(containerId);
-  const row=document.createElement("div");
-  row.className="dynamic-row";
-  row.innerHTML=`<input value="${safe(value)}" placeholder="Nombre"><button type="button">×</button>`;
-  row.querySelector("input").addEventListener("input",render);
-  row.querySelector("button").addEventListener("click",()=>{row.remove();syncKidCount();render()});
-  box.appendChild(row);
+function pageCover(n,tot){
+  const c=S.client, cards=coverCards();
+  return `<div class="pg">${band(`<strong>Resumen de Beneficios</strong>${today()}<br>Documento informativo — no es la póliza`)}${abar()}
+  <div class="pg-in"><h1>Su protección, explicada<br>en palabras sencillas</h1>
+  <p class="sub1">Preparado especialmente para ${esc(CN())}${hasB()?` y ${esc(BN())}`:""}</p>
+  <div class="client${cards.length>4?" tight":""}">
+    <div class="cl-per"><div class="lbl">${hasB()?"Asegurado A":titA()}</div><div class="val">${esc(CN())}</div>
+      <div class="cl-meta">${esc(c.aSex)}${c.aAge!==""?" · "+c.aAge+" años":""} · ${esc(c.aTob)}${c.aDob?" · nac. "+fmtDob(c.aDob):""}</div></div>
+    ${hasB()?`<div class="cl-per"><div class="lbl">Asegurado B · cónyuge</div><div class="val">${esc(BN())}</div>
+      <div class="cl-meta">${esc(c.bSex)}${c.bAge!==""?" · "+c.bAge+" años":""} · ${esc(c.bTob)}${c.bDob?" · nac. "+fmtDob(c.bDob):""}</div></div>`:""}
+    ${c.kids?`<div class="cl-per"><div class="lbl">Hijos</div><div class="val">${c.kids}</div>
+      <div class="cl-meta">${c.kids===1?"un hijo":c.kids+" hijos"} en la familia</div></div>`:""}
+    ${c.state?`<div class="cl-per"><div class="lbl">Estado</div><div class="val">${esc(c.state.toUpperCase())}</div></div>`:""}
+  </div>
+  <p class="lede">Este documento reúne en un solo lugar ${cards.length===1?"el plan que usted tiene":"los planes que usted tiene"} con American Income Life. Guárdelo junto con su póliza.</p>
+  ${cardsHtml(cards)}
+  <div class="prem"><div><div class="pl">Su inversión total</div>
+    <div class="pa">${money2(S.prem.amt)} <span>/ ${esc(S.prem.mode.split(" ")[0].toLowerCase())}</span></div></div>
+    <div class="ps">${cards.length>1?"Todos los planes incluidos":"Plan incluido"}<br>${esc(S.prem.mode)}</div></div>
+  <div class="gnote"><p>Un solo pago, ${cards.length>1?"todas sus coberturas":"su cobertura"} al día. El mismo costo cada mes, sin aumentos por edad.</p></div>
+  ${foot("Este resumen fue preparado por su agente autorizado y no sustituye el contrato de la póliza. Solo las cláusulas oficiales de la póliza determinan los beneficios pagaderos.", n, tot)}</div></div>`;
 }
-function syncKidCount(){
-  const n=document.querySelectorAll("#kidNames .dynamic-row").length;
-  if(n>Number($("kids").value||0)) $("kids").value=n;
+
+function pageA71(n,tot){
+  const d=+S.mods.a71.amt, u=d/100, rec=S.mods.a71.rec;
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>Protección por Accidente · A71<br>${money(d)} diarios`)}${abar(n)}
+  <div class="pg-in"><h2>Protección por Accidente</h2><div class="rule"></div>
+  ${covLine("a71")}
+  <p>Un accidente no avisa. Esta póliza paga <strong>dinero en efectivo directamente a usted</strong> cuando ocurre uno. Usted decide en qué usarlo: la renta, la comida, el transporte, o quien lo cuide en casa.</p>
+  <table><thead><tr><th style="width:56%">Beneficio</th><th class="n">Cuánto paga</th></tr></thead><tbody>
+    <tr><td class="b">Hospitalización<div class="sub">Por cada día internado, hasta 365 días por accidente</div></td><td class="n">${money(d)} por día</td></tr>
+    <tr><td class="b">Cuidados intensivos (UCI)<div class="sub">Se suma al beneficio de hospitalización, hasta 14 días — ${money(d*2)} en total por día</div></td><td class="n">${money(d)} adicionales</td></tr>
+    <tr><td class="b">Emergencia sin hospitalización<div class="sub">Dentro de las 72 horas del accidente</div></td><td class="n">Hasta ${money(d/2)}</td></tr>
+    <tr><td class="b">Pérdida de una mano, un pie o la vista de un ojo</td><td class="n">${money(u*5000)}</td></tr>
+    <tr><td class="b">Muerte accidental o pérdida de dos miembros</td><td class="n">${money(u*10000)}</td></tr>
+    ${rec?`<tr><td class="b">Recuperación por Accidente<div class="sub">Ingreso mensual tras el alta del hospital, mientras no pueda trabajar, hasta 6 meses por accidente</div></td><td class="n">Según póliza</td></tr>`:""}
+  </tbody></table>
+  <h3>El beneficio se multiplica según dónde ocurra el accidente</h3>
+  <table><thead><tr><th style="width:42%">Tipo de accidente</th><th class="n">Muerte accidental</th><th class="n">Pérdida de un miembro</th></tr></thead><tbody>
+    <tr><td>Accidente común</td><td class="n">${money(u*10000)}</td><td class="n">${money(u*5000)}</td></tr>
+    <tr><td>En automóvil particular <span class="mult">(×2)</span></td><td class="n">${money(u*20000)}</td><td class="n">${money(u*10000)}</td></tr>
+    <tr><td>En transporte público pagado <span class="mult">(×5)</span><div class="sub">Autobús, avión, taxi o tren, como pasajero que pagó boleto</div></td><td class="n">${money(u*50000)}</td><td class="n">${money(u*25000)}</td></tr>
+  </tbody></table>
+  <p class="tnote">Si un mismo accidente causa varias pérdidas, la compañía paga solamente la más alta. La pérdida debe ocurrir dentro de los 90 días del accidente. Los hijos cubiertos reciben una quinta parte de estos montos.</p>
+  <div class="note"><p><strong>Lo más importante que usted debe saber:</strong> este plan cubre <strong>únicamente accidentes</strong>. No paga nada por enfermedad, gripe, diabetes, cáncer, presión alta ni ninguna otra condición médica. <strong>No es un suplemento de Medicare</strong> ni sustituye su seguro de salud: paga <strong>además</strong> de Medicare y de cualquier otra cobertura que usted tenga.</p></div>
+  ${foot("Aviso para personas con Medicare: esto NO es un seguro suplementario de Medicare. Es una póliza de beneficios limitados que paga una cantidad fija y no cubre sus deducibles ni coaseguros de Medicare.", n, tot)}</div></div>`;
 }
-function syncKidRowsToCount(){
-  const want=Math.max(0,Number($("kids").value||0));
-  const box=$("kidNames");
-  while(box.children.length<want) makeDynamicRow("kidNames","");
-  while(box.children.length>want) box.lastElementChild.remove();
+
+function pageWL(n,tot){
+  const W=S.mods.wl, f=+W.face||0, fs=+W.faceS||0, two=fs>0;
+  const col = (on,val) => on ? `<td class="n">${val}</td>` : `<td class="n blank">No incluido</td>`;
+  const hdr = two
+    ? `<tr><th style="width:40%">Beneficio</th><th class="n">${esc(CN())}</th><th class="n">${esc(colB())}</th></tr>`
+    : `<tr><th style="width:56%">Beneficio</th><th class="n">${esc(CN())}</th></tr>`;
+  const rows = [];
+  rows.push(`<tr><td class="b">Beneficio por muerte<div class="sub">Pagado al beneficiario que se nombre</div></td>
+    <td class="n" style="font-size:12pt">${money(f)}</td>${two?`<td class="n" style="font-size:12pt">${money(fs)}</td>`:""}</tr>`);
+  if(W.tir||W.tirS) rows.push(`<tr><td class="b">Enfermedad Terminal<div class="sub">Adelanto de la mitad del beneficio en vida</div></td>
+    ${col(W.tir, money(f/2))}${two?col(W.tirS, money(fs/2)):""}</tr>`);
+  if(W.adb||W.adbS) rows.push(`<tr><td class="b">Muerte Accidental (ADB)<div class="sub">Se suma al beneficio si el fallecimiento es por accidente</div></td>
+    ${col(W.adb, money(W.adbAmt))}${two?col(W.adbS, money(W.adbAmtS)):""}</tr>`);
+  if(W.wp||W.wpS) rows.push(`<tr><td class="b">Exoneración de Primas<div class="sub">Tras 6 meses de incapacidad total continua</div></td>
+    ${col(W.wp,"Incluida")}${two?col(W.wpS,"Incluida"):""}</tr>`);
+  if(W.chr) rows.push(`<tr><td class="b">Children Rider<div class="sub">Todos los hijos con una sola prima — detalles en la página siguiente</div></td>
+    <td class="n"${two?' colspan="2"':''}>$10,000 por hijo</td></tr>`);
+
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>Gastos Finales<br>${money(f)}${two?` + ${money(fs)}`:""}`)}${abar(n)}
+  <div class="pg-in"><h2>Gastos Finales</h2><div class="rule"></div>
+  <p>Este es el plan que asegura que su familia <strong>no tenga que pagar el funeral de su propio bolsillo ni pedir prestado</strong>. El dinero se paga directamente a quien usted nombre, normalmente en días y sin pasar por corte.</p>
+  <table><thead>${hdr}</thead><tbody>${rows.join("")}</tbody></table>
+  <h3>Lo que aplica a ${two?"ambas coberturas":"esta cobertura"}</h3>
+  <table><thead><tr><th style="width:31%">Característica</th><th>Qué significa para usted</th></tr></thead><tbody>
+    <tr><td class="b">Prima nivelada</td><td>El pago <strong>nunca aumenta</strong> por la edad ni por el estado de salud. La compañía no puede subir la prima de forma individual.</td></tr>
+    <tr><td class="b">Cobertura de por vida</td><td>No se vence a los 80 ni a los 90. Mientras se pague, la cobertura sigue, y la compañía <strong>no puede cancelar</strong> la póliza.</td></tr>
+    <tr><td class="b">Valor en efectivo</td><td>Con los años la póliza acumula un <strong>valor en efectivo garantizado que le pertenece</strong>. Se puede pedir prestado en una emergencia, o usar para dejar la póliza saldada.</td></tr>
+    <tr><td class="b">Apoyo funerario</td><td>La compañía puede ayudar a la familia con la coordinación y los trámites funerarios en el momento del reclamo.</td></tr>
+  </tbody></table>
+  <div class="gnote"><p><strong>Por qué esto importa:</strong> el costo promedio de un funeral en Estados Unidos supera hoy los $8,000. Este plan existe para que ese gasto no caiga sobre su familia, y para que el dinero llegue rápido y directo a quien usted designe.</p></div>
+  ${foot((W.tir||W.tirS)?"Enfermedad Terminal: al recibir el adelanto, el beneficio por muerte, el valor en efectivo y el valor de préstamo se reducen a la mitad. Los pagos bajo un beneficio acelerado por muerte pueden estar sujetos a impuestos; consulte a su asesor fiscal. Ni la compañía ni su agente brindan asesoría fiscal.":"Los valores garantizados de la póliza aparecen en la Página 3 del contrato.", n, tot)}</div></div>`;
 }
-$("addKidName").addEventListener("click",()=>{makeDynamicRow("kidNames","");syncKidCount();render()});
-$("addPetName").addEventListener("click",()=>{makeDynamicRow("petNames","");render()});
-$("kids").addEventListener("input",()=>{syncKidRowsToCount();render()});
-syncKidRowsToCount();
 
-render();
-
-async function downloadPDF(){
-  const btn=$("pdfBtn"),old=btn.textContent;btn.textContent="Generando…";btn.disabled=true;
-  try{
-    const canvas=await html2canvas($("doc"),{scale:2,backgroundColor:"#ffffff",useCORS:true});
-    const img=canvas.toDataURL("image/jpeg",.94);
-    const {jsPDF}=window.jspdf;
-    const pdf=new jsPDF("p","in","letter");
-    pdf.addImage(img,"JPEG",0,0,8.5,11);
-    pdf.save(`ilustracion-${(state().a.name||"cliente").replace(/\s+/g,"-").toLowerCase()}.pdf`);
-  }catch(e){alert("No se pudo generar el PDF. "+e.message)}
-  finally{btn.textContent=old;btn.disabled=false}
+function pageKids(n,tot){
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>Children Rider<br>$10,000 por cada hijo`)}${abar(n)}
+  <div class="pg-in"><h2>La cobertura de sus hijos</h2><div class="rule"></div>
+  <p>Con el Children Rider, <strong>${S.client.kids?(S.client.kids===1?"su hijo queda cubierto por $10,000":`sus ${S.client.kids} hijos quedan cubiertos por $10,000 cada uno`):"todos sus hijos quedan cubiertos por $10,000 cada uno"}</strong> bajo su misma póliza y con un solo pago.</p>
+  <table><thead><tr><th style="width:29%">Punto</th><th>Qué significa para su familia</th></tr></thead><tbody>
+    <tr><td class="b">Quiénes entran</td><td>Todos sus hijos <strong>menores de 18 años</strong> nombrados en la solicitud, incluidos hijastros e hijos adoptados legalmente. Cada uno queda cubierto por <strong>$10,000</strong>.</td></tr>
+    <tr><td class="b">Si les nace<br>otro hijo</td><td>${S.client.kids?`Hoy son <strong>${S.client.kids===1?"un hijo":S.client.kids+" hijos"}</strong>. Si mañana llega otro, queda`:"Queda"} cubierto <strong>automáticamente a los 15 días de nacido</strong>, con <strong>exactamente los mismos beneficios que sus hermanos</strong>. Un hijo adoptado antes de los 18 queda cubierto desde la fecha de la adopción.</td></tr>
+    <tr><td class="b">La prima<br>no sube</td><td>La prima cubre a <strong>todos los hijos con un solo pago</strong>; no se cobra por cada uno. Tener un tercer o un cuarto hijo <strong>no le aumenta el costo de la póliza</strong>.</td></tr>
+    <tr><td class="b">Hasta cuándo</td><td>La cobertura de cada hijo llega <strong>hasta los 21 años</strong>.</td></tr>
+    <tr><td class="b">Lo que se<br>llevan de adultos</td><td>Antes de cumplir 21, cada hijo puede convertir su cobertura en una póliza propia y permanente por hasta <strong>cinco veces</strong> el monto —hasta <strong>$50,000</strong>— <strong>sin preguntas de salud ni examen médico</strong>, sin importar cómo esté de salud en ese momento.</td></tr>
+    <tr><td class="b">Si algo le<br>pasa a usted</td><td>Si el asegurado principal fallece, la cobertura de los hijos <strong>queda pagada</strong> y sigue vigente sin que la familia tenga que pagar un centavo más.</td></tr>
+  </tbody></table>
+  <div class="gnote"><p>Ese derecho a convertir sin preguntas de salud es lo más valioso del rider: si alguno de sus hijos desarrolla una condición de salud antes de los 21, de todas formas podrá quedarse con su propio seguro de vida.</p></div>
+  ${foot("La cobertura de un hijo termina en el aniversario de la póliza posterior a sus 21 años, o antes si el asegurado principal cumple 65. Los detalles completos están en el rider de su póliza.", n, tot)}</div></div>`;
 }
-$("pdfBtn").addEventListener("click",downloadPDF);
 
-let slides=[],idx=0;
-function peopleHTML(s){
-  let x="";
-  if(s.a.name)x+=`<div class="person"><div class="face">${s.a.sex==="Hombre"?"A":"A"}</div><b>${safe(first(s.a.name))}</b><small>Asegurado</small></div>`;
-  if(s.b.name)x+=`<div class="person"><div class="face">${s.b.sex==="Hombre"?"A":"A"}</div><b>${safe(first(s.b.name))}</b><small>Asegurado</small></div>`;
-
-  for(let i=0;i<s.kids;i++){
-    const nm=s.kidNames[i] || `Hijo/a ${i+1}`;
-    x+=`<div class="person"><div class="face">HIJO</div><b>${safe(nm)}</b><small>Asegurado/a</small></div>`;
-  }
-  for(const pet of s.petNames){
-    x+=`<div class="person"><div class="face">MASC</div><b>${safe(pet)}</b><small>Parte emocional de la familia · no cubierta</small></div>`;
-  }
-  return x||`<div class="person"><div class="face">HOGAR</div><b>Tu familia</b><small>Lo que queremos proteger</small></div>`;
+function pageHS(n,tot){
+  const k = hsKids(), total = k.reduce((s,x)=>s+(+x.amt||0),0);
+  const rows = k.map(c=>{
+    const a = age(c.dob);
+    return `<tr><td class="b">${esc((c.name||"—").toUpperCase())}</td>
+      <td class="n" style="font-weight:400">${c.dob?fmtDob(c.dob):"—"}</td>
+      <td class="n" style="font-weight:400">${a!==""?a+" años":"—"}</td>
+      <td class="n">${money(c.amt)}</td></tr>`;
+  }).join("");
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>HeadStart · Gastos Finales<br>${k.length} ${k.length===1?"hijo":"hijos"} · ${money(total)}`)}${abar(n)}
+  <div class="pg-in"><h2>HeadStart — para sus hijos</h2><div class="rule"></div>
+  <p>HeadStart es un <strong>seguro de vida permanente a nombre de cada hijo</strong>. No es un rider ni un añadido:
+  es una póliza propia que les pertenece y que se llevan cuando sean adultos.</p>
+  <table><thead><tr><th style="width:40%">Hijo</th><th class="n">Fecha de nacimiento</th><th class="n">Edad</th><th class="n">Cobertura</th></tr></thead>
+  <tbody>${rows}</tbody></table>
+  ${k.length>1?`<p class="tnote">Cobertura total para ${k.length===1?"el hijo":"los "+k.length+" hijos"}: <strong>${money(total)}</strong>.</p>`:""}
+  <h3>Por qué comprarlo ahora y no después</h3>
+  <table><thead><tr><th style="width:31%">Característica</th><th>Qué significa para su familia</th></tr></thead><tbody>
+    <tr><td class="b">La prima se congela<br>a la edad de hoy</td><td>La prima se calcula con la edad que el niño tiene <strong>ahora</strong> y <strong>no vuelve a subir nunca</strong>. Es la tarifa más baja que va a tener en toda su vida.</td></tr>
+    <tr><td class="b">Cobertura de por vida</td><td>No se vence a los 21 ni a los 65. Es permanente, y la compañía <strong>no puede cancelarla</strong> mientras se pague.</td></tr>
+    <tr><td class="b">Acumula valor<br>en efectivo</td><td>Con los años la póliza acumula un <strong>valor en efectivo garantizado</strong> que pertenece al niño. De adulto puede pedirlo prestado o dejar la póliza saldada.</td></tr>
+    <tr><td class="b">Podrán comprar más<br>sin preguntas de salud</td><td>La póliza incluye la <strong>Opción de Compra Garantizada</strong>: a los <strong>25, 28, 31, 34, 37 y 40 años</strong> su hijo puede comprar hasta <strong>$25,000 adicionales</strong> de cobertura <strong>sin examen médico ni preguntas de salud</strong>, sin importar cómo esté de salud en ese momento. También puede adelantar una de esas fechas <strong>al casarse o al nacerle un hijo</strong>.</td></tr>
+    <tr><td class="b">Es de ellos</td><td>Al llegar a adultos la póliza es suya. Ya no tienen que empezar de cero ni pasar por un examen médico para tener seguro de vida.</td></tr>
+  </tbody></table>
+  <div class="gnote"><p><strong>Lo que de verdad está comprando:</strong> hoy su hijo es asegurable. Nadie sabe si a los 30 lo seguirá siendo. Esta póliza le garantiza que, pase lo que pase con su salud, siempre va a poder tener seguro de vida — y al precio de cuando era niño.</p></div>
+  ${foot("La Opción de Compra Garantizada se ejerce dentro de los 60 días previos a cada fecha de opción; la compañía avisa con anticipación. Los detalles completos están en la póliza y en el rider correspondiente.", n, tot)}</div></div>`;
 }
-function buildPresentation(){
-  const s=state(),cards=coverCards(),fam=[first(s.a.name),first(s.b.name)].filter(Boolean).join(" y ")||"Tu familia";
-  const stk=s.stk;
-  const famCalc=familyProtectionBreakdown(s,cards);
-  const wpp=weeklyPerPerson(s);
-  const cmp=s.compareValue>0 ? wpp/s.compareValue : 0;
 
-  let h=`
-  <section class="slide on"><div class="wrap">
-    <div class="kicker">Resumen de beneficios</div>
-    <h1 class="title">Sus beneficios,<br><span class="warm">${safe(fam)}</span></h1>
-    <p class="lead">Ahora vamos a revisar, uno por uno, los beneficios que quedaron seleccionados y cuánto representa el conjunto para la familia.</p>
-    <div class="plan-grid">${cards.length?cards.map(c=>`
-      <div class="plan ${c.life?"life":""}">
-        <div class="kicker" style="margin:0 0 5px;font-size:9px">${safe(c.kick)}</div>
-        <h3>${safe(c.name)}</h3>
-        <div class="form">${safe(c.form)}</div>
-        <ul>${c.li.slice(0,4).map(x=>`<li>${safe(x)}</li>`).join("")}</ul>
-      </div>`).join(""):`<div class="plan"><h3>No hay beneficios seleccionados</h3></div>`}
-    </div>
-    ${(s.kidNames.length||s.petNames.length||s.beneficiary)?`
-      <div class="family-names">
-        ${s.kidNames.length?`<div><b>Hijos:</b> ${s.kidNames.map(safe).join(", ")}</div>`:""}
-        ${s.petNames.length?`<div style="margin-top:5px"><b>Mascotas:</b> ${s.petNames.map(safe).join(", ")} <span style="color:#87949B">· parte de la familia, no incluidas en los beneficios</span></div>`:""}
-        ${s.beneficiary?`<div style="margin-top:5px"><b>Beneficiario:</b> ${safe(s.beneficiary)}</div>`:""}
-      </div>`:""}
-  </div></section>`;
+function pageTerm(n,tot){
+  const T=S.mods.term, tf=+T.face||0, ts=+T.faceS||0;
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>Protección de Ingresos<br>${esc(T.plan)}`)}${abar(n)}
+  <div class="pg-in"><h2>Protección de Ingresos</h2><div class="rule"></div>
+  <p>Mientras su familia dependa de su ingreso, esta cobertura la protege por una cantidad mucho mayor y a un costo mucho menor.</p>
+  <table><thead><tr><th style="width:48%">Persona cubierta</th><th class="n">Beneficio</th><th class="n">Plazo</th></tr></thead><tbody>
+    <tr><td class="b">${esc(CN())}<div class="sub">Asegurado A · principal</div></td><td class="n">${money(tf)}</td><td class="n" style="font-weight:400">${esc(T.plan)}</td></tr>
+    <tr><td class="b">${esc(colB())}<div class="sub">Asegurado B · cónyuge</div></td><td class="n ${ts?"":"blank"}">${ts?money(ts):"No incluido"}</td><td class="n" style="font-weight:400">${ts?esc(T.plan):"—"}</td></tr>
+  </tbody></table>
+  <table><thead><tr><th style="width:31%">Característica</th><th>Qué significa para usted</th></tr></thead><tbody>
+    <tr><td class="b">Cómo se paga</td><td>El beneficio se entrega al beneficiario en una sola suma, o repartido en pagos mensuales durante el período que se elija.</td></tr>
+    <tr><td class="b">Plazo</td><td>${esc(T.plan)}. La cobertura protege durante ese período; al terminar, se puede renovar a la tarifa de la edad que se tenga en ese momento.</td></tr>
+    <tr><td class="b">Convertible</td><td>Puede convertirse a un plan permanente <strong>sin nuevas preguntas de salud</strong> ni examen médico, dentro del plazo indicado en la póliza.</td></tr>
+    <tr><td class="b">Prima nivelada</td><td>El pago se mantiene igual durante todo el plazo del término.</td></tr>
+  </tbody></table>
+  <p class="tnote">El seguro a término no acumula valor en efectivo: es protección pura al costo más bajo por dólar de cobertura.</p>
+  <div class="gnote"><p><strong>Por qué el monto es tan alto:</strong> esta cobertura no está pensada para un funeral, sino para reemplazar años de ingreso. Si usted falta, su familia puede seguir pagando la renta o la hipoteca, la comida y la escuela sin cambiar de vida de un día para otro.</p></div>
+  ${foot("El detalle completo de plazos, renovación y conversión está en la Página 3 de su póliza.", n, tot)}</div></div>`;
+}
 
-  cards.forEach((c,i)=>{
-    h+=`<section class="slide"><div class="wrap focus">
-      <div class="focusbox">
-        <div class="symbol">${safe(c.icon)}</div>
-        <div class="fk">${safe(c.form)}</div>
-        <div class="fn">${safe(c.name)}</div>
-      </div>
-      <div>
-        <div class="kicker">${safe(c.kick)}</div>
-        <h2 class="title" style="font-size:clamp(38px,5vw,68px)">${safe(c.name)}</h2>
-        <div class="benefits">
-          ${c.li.map(x=>`<div class="benefit"><span class="check">•</span><span>${safe(x)}</span></div>`).join("")}
-        </div>
-      </div>
-    </div></section>`;
+function pageH34(n,tot){
+  const d=+S.mods.h34.amt, bm=S.mods.h34.bm200;
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>Indemnización Hospitalaria · H34<br>${money(d)} diarios`)}${abar(n)}
+  <div class="pg-in"><h2>Indemnización Hospitalaria</h2><div class="rule"></div>
+  ${covLine("h34")}
+  <p>A diferencia del plan de accidentes, esta póliza paga <strong>tanto por enfermedad como por accidente</strong>. Cada día que pase internado, la compañía le manda dinero a usted.</p>
+  <table><thead><tr><th style="width:56%">Beneficio</th><th class="n">Cuánto paga</th></tr></thead><tbody>
+    <tr><td class="b">Hospitalización<div class="sub">Por cada día internado, hasta 365 días por confinamiento</div></td><td class="n">${money(d)} por día</td></tr>
+    <tr><td class="b">Cirugía ambulatoria<div class="sub">Paga días de beneficio según el tipo: hernia 2 días, vesícula 3, cataratas 2, biopsia 1</div></td><td class="n">${money(d)} por día</td></tr>
+    <tr><td class="b">Atención en casa<div class="sub">Una semana por cada día internado, hasta 12 semanas. Enfermería o terapia recetada, iniciando dentro de 7 días del alta</div></td><td class="n">${money(d)} por semana</td></tr>
+    <tr><td class="b">Emergencia por accidente<div class="sub">Dentro de las 72 horas. No se paga si se paga otro beneficio</div></td><td class="n">Hasta ${money(d)}</td></tr>
+    <tr><td class="b">Muerte accidental o pérdida de dos miembros<div class="sub">40 veces el beneficio diario, dentro de 180 días</div></td><td class="n">${money(d*40)}</td></tr>
+    <tr><td class="b">Pérdida de un miembro</td><td class="n">${money(d*20)}</td></tr>
+    ${bm?`<tr><td class="b">Recuperación (Rider BM-200)<div class="sub">Una semana por cada día internado, hasta 12 semanas, mientras no pueda hacer sus labores</div></td><td class="n">${money(d)} por semana</td></tr>`:""}
+  </tbody></table>
+  <div class="note"><p><strong>Requisito importante:</strong> la ley federal exige que usted tenga cobertura médica mayor (<em>minimum essential coverage</em>) para tener esta póliza. Es un <strong>suplemento</strong> a su seguro de salud, nunca un reemplazo, y <strong>no es un suplemento de Medicare</strong>.</p>
+  <p><strong>Condiciones preexistentes:</strong> no hay beneficios durante los primeros 2 años para una condición por la cual recibió consejo o tratamiento médico en los 2 años anteriores, salvo que la haya declarado en la solicitud y la compañía la haya aceptado.</p></div>
+  <p class="tnote">Varios confinamientos por la misma causa cuentan como uno solo, salvo que hayan pasado al menos 90 días fuera del hospital entre ellos. La póliza es renovable de por vida y la compañía no puede cancelarla.</p>
+  ${foot("Aviso para personas con Medicare: esto NO es un seguro suplementario de Medicare. Paga una cantidad fija por día y no cubre sus deducibles ni coaseguros de Medicare.", n, tot)}</div></div>`;
+}
+
+const RULES_LUMP = `<div class="note"><p><strong>Reglas de las pólizas de suma global:</strong> hay una <strong>espera de 30 días</strong> desde la fecha de la póliza — nada se paga por una condición que se manifieste antes. El beneficio <strong>se reduce a la mitad a los 65 años</strong> y la póliza <strong>termina a los 80</strong>. Se paga <strong>un solo diagnóstico</strong>: la cobertura de esa persona termina cuando se paga su beneficio. El diagnóstico debe hacerse dentro de los Estados Unidos.</p></div>`;
+
+function pageCancer(n,tot){
+  const M=S.mods, b=[];
+  if(M.c20.on) b.push(`<h3>Suma Global · C20</h3>${covLine("c20")}
+    <p>Paga <strong>${money(M.c20.amt)} de una sola vez</strong> al primer diagnóstico de cáncer, directamente a usted. No hace falta estar hospitalizado: basta la prueba patológica. El dinero es suyo para lo que necesite — copagos, viajes al tratamiento, la renta, o reemplazar el sueldo que deje de recibir.</p>
+    <div class="note"><p><strong>Estas condiciones no cuentan como cáncer</strong> para esta póliza: cáncer de piel basocelular (menor de 1.0 cm) y espinocelular (menor de 1.5 cm); carcinoma in situ; enfermedad de Hodgkin en etapa 1; cáncer de próstata etapa A; y melanoma en nivel Clark I o II, o Breslow menor de 0.75 mm.</p></div>`);
+  if(M.c10.on) b.push(`<h3 style="margin-top:${b.length?14:0}px">Indemnización · C10</h3>${covLine("c10")}
+    <p>Paga por el tratamiento del cáncer, día por día:</p>
+    <table><thead><tr><th style="width:56%">Beneficio</th><th class="n">Cuánto paga</th></tr></thead><tbody>
+    <tr><td class="b">Hospitalización por cáncer<div class="sub">Hasta 500 días de por vida</div></td><td class="n">${money(M.c10.amt)} por día</td></tr>
+    <tr><td class="b">Tratamiento ambulatorio<div class="sub">Cirugía, radiación, quimioterapia, cobalto o transfusiones, en consultorio, clínica u hospital. Hasta 500 días de por vida</div></td><td class="n">${money(M.c10.amt)} por día</td></tr>
+    </tbody></table>
+    <p class="tnote">Se requiere diagnóstico patológico. No hay beneficios por tratamiento recibido más de 90 días antes del diagnóstico. No es elegible quien ya haya tenido un diagnóstico de cáncer.</p>`);
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>Protección contra el cáncer`)}${abar(n)}
+  <div class="pg-in"><h2>Protección contra el cáncer</h2><div class="rule"></div>${b.join("")}
+  ${M.c20.on?RULES_LUMP:""}
+  ${foot("El detalle completo de definiciones, limitaciones y exclusiones está en su póliza y en el Outline of Coverage entregado con la solicitud.", n, tot)}</div></div>`;
+}
+
+function pageCI(n,tot){
+  const M=S.mods;
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>Enfermedad Crítica · CI<br>${money(M.ci.amt)}`)}${abar(n)}
+  <div class="pg-in"><h2>Enfermedad Crítica</h2><div class="rule"></div>
+  ${covLine("ci")}
+  <p>Paga <strong>${money(M.ci.amt)} de una sola vez</strong> al primer diagnóstico de una de estas condiciones cubiertas:</p>
+  <div class="excl"><ul><li>Infarto al corazón</li><li>Derrame cerebral</li><li>Insuficiencia renal terminal</li></ul>
+  <ul><li>Trasplante de corazón, pulmón, hígado, riñón, páncreas o médula ósea</li><li>Pérdida total de la vista en ambos ojos</li><li>Pérdida total de la audición en ambos oídos</li></ul></div>
+  <div class="note"><p><strong>Esta póliza no cubre cáncer.</strong> Si usted quiere protección contra el cáncer, es una póliza distinta y aparte.</p></div>
+  ${RULES_LUMP}
+  <div class="gnote"><p><strong>Por qué importa:</strong> hoy se sobrevive a un infarto o a un derrame mucho más que antes, pero la recuperación cuesta — terapias, tiempo sin trabajar, adaptaciones en la casa. Este dinero llega de una sola vez y usted decide en qué usarlo.</p></div>
+  ${foot("El detalle completo de definiciones, limitaciones y exclusiones está en su póliza y en el Outline of Coverage entregado con la solicitud.", n, tot)}</div></div>`;
+}
+
+function pageA74(n,tot){
+  const u=+S.mods.a74.units||1;
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>Accidente con Incapacidad · A74`)}${abar(n)}
+  <div class="pg-in"><h2>Accidente con Incapacidad</h2><div class="rule"></div>
+  <p>Si un accidente lo deja sin poder trabajar, las cuentas siguen llegando igual. Esta póliza reemplaza parte de su ingreso mientras se recupera.</p>
+  <table><thead><tr><th style="width:56%">Beneficio</th><th class="n">Cuánto paga</th></tr></thead><tbody>
+    <tr><td class="b">Incapacidad total por accidente<div class="sub">Comienza al 8.º día, tras 7 días de eliminación · máximo 26 semanas</div></td><td class="n">${money(100*u)} por semana</td></tr>
+    <tr><td class="b">Emergencia por accidente<div class="sub">Dentro de las 72 horas, como paciente externo</div></td><td class="n">Hasta ${money(100*u)}</td></tr>
+    <tr><td class="b">Muerte accidental común</td><td class="n">${money(10000*u)}</td></tr>
+    <tr><td class="b">Muerte en accidente de automóvil</td><td class="n">${money(25000*u)}</td></tr>
+    <tr><td class="b">Muerte en transporte público pagado</td><td class="n">${money(50000*u)}</td></tr>
+  </tbody></table>
+  <div class="note"><p>Esta póliza cubre <strong>accidente solamente</strong>; no paga beneficios por enfermedad. Se emite únicamente a personas empleadas de tiempo completo, entre 18 y 60 años, y <strong>no admite cobertura familiar</strong>. Es renovable garantizada hasta los 70 años.</p></div>
+  ${foot("El detalle completo de limitaciones y exclusiones está en su póliza y en el Outline of Coverage entregado con la solicitud.", n, tot)}</div></div>`;
+}
+
+function pageStack(n,tot){
+  const t=S.stk,
+    rows=[["Hospitalización familiar",+t.hosp||0],["Gastos finales",+t.final||0],["Protector de ingresos",+t.ing||0],["Muerte accidental (padres)",+t.acc||0],["Cobertura niños",+t.ninos||0]],
+    total=rows.reduce((a,r)=>a+r[1],0), pers=4, men=+t.mensual||0;
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>Stack de valor familiar<br>${money(total)} de protección`)}${abar(n)}
+  <div class="pg-in"><h2>Stack de valor familiar</h2><div class="rule"></div>
+  <p class="lede">Todo lo que la familia tendría disponible, sumado en un solo número.</p>
+  <div class="stklist">
+    ${rows.map(r=>`<div class="stkline"><span>${r[0]}</span><b>${money(r[1])}</b></div>`).join("")}
+    <div class="stkline total"><span>Protección total</span><b>${money(total)}</b></div>
+  </div>
+  <div class="stkreveal"><div class="rlab">TODO ESTO POR SOLO</div><div class="rbig">${money2(men)}/mes</div>
+  <div class="rsmall">${money2(men/pers)} por persona &middot; ${money2(men/pers/4)}/semana por persona</div></div>
+  ${foot("Valores ilustrativos para la conversación familiar. No constituyen una oferta de cobertura.", n, tot)}</div></div>`;
+}
+
+function pageValues(n,tot){
+  const M=S.mods;
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>Limitaciones y<br>puntos importantes`)}${abar(n)}
+  <div class="pg-in"><h2>Limitaciones y puntos importantes</h2><div class="rule"></div>
+  ${M.wl.on?`<h3>Sobre el valor en efectivo de su póliza</h3>
+    <p>Su póliza de vida permanente <strong>acumula un valor en efectivo garantizado que le pertenece a usted</strong>.
+    Crece con los años mientras la póliza se mantenga vigente y las primas se paguen a tiempo. Ese valor se puede
+    <strong>pedir prestado</strong> en una emergencia, o usar para <strong>dejar la póliza saldada</strong>
+    (<em>reduced paid up</em>) si algún día usted decidiera no seguir pagando primas.</p>
+    <div class="note"><p>Los montos exactos, año por año, vienen <strong>impresos en la Página 3 (Policy Schedule)
+    de su póliza</strong>. Son los únicos valores oficiales. Ni este resumen ni su agente le pueden dar una cifra
+    distinta de la que aparece en su contrato.</p></div>`:""}
+  ${M.a71.on||M.a74.on?`<h3>Lo que la protección por accidente no cubre</h3>
+  <div class="excl"><ul><li>Enfermedad, dolencia o padecimiento mental de cualquier tipo</li><li>Suicidio, intento de suicidio o lesión autoinfligida</li><li>Guerra o servicio en las fuerzas armadas</li><li>Hernia de cualquier tipo</li></ul>
+  <ul><li>Viaje aéreo, salvo como pasajero de pago en aerolínea comercial regular</li><li>Carreras, paracaidismo u otros pasatiempos peligrosos</li><li>Uso de drogas, narcóticos o alucinógenos</li><li>Cometer o intentar cometer un delito grave o una agresión</li></ul></div>`:""}
+  <h3 style="margin-top:13px">Otras cosas que usted debe saber</h3>
+  <table><thead><tr><th style="width:31%">Tema</th><th>Detalle</th></tr></thead><tbody>
+    <tr><td class="b">Período de gracia</td><td>Si se le pasa un pago, tiene <strong>31 días</strong> para ponerse al día sin perder la cobertura.</td></tr>
+    <tr><td class="b">Derecho a devolver<br>la póliza</td><td>Al recibir su póliza, léala con calma. Si no queda conforme, puede devolverla dentro del plazo indicado en la carátula y recibir <strong>reembolso de lo pagado</strong>.</td></tr>
+    <tr><td class="b">Información veraz<br>en la solicitud</td><td>Toda su información médica debe ser completa y verdadera. Omitir información puede dar motivo a la compañía para negar un reclamo futuro.</td></tr>
+    <tr><td class="b">Sus beneficiarios</td><td>Revise cada año que su beneficiario esté correcto. Cambiarlo es gratis y solo toma una llamada a su agente.</td></tr>
+    <tr><td class="b">Cómo hacer<br>un reclamo</td><td>Llame primero a su agente. Él lo acompaña en todo el proceso y le ayuda a reunir los documentos.</td></tr>
+  </tbody></table>
+  ${foot("El detalle completo de limitaciones y exclusiones de cada plan está en su póliza y en el Outline of Coverage que se le entregó con la solicitud.", n, tot)}</div></div>`;
+}
+
+function pageLegal(n,tot){
+  const a=S.agent, M=S.mods;
+  const med = M.a71.on||M.h34.on||M.c20.on||M.c10.on||M.ci.on||M.a74.on;
+  return `<div class="pg">${band(`<strong>${esc(CN())}</strong>Avisos importantes<br>y datos de contacto`)}${abar(n)}
+  <div class="pg-in"><h2>Avisos importantes</h2><div class="rule"></div>
+  ${med?`<h3>Aviso obligatorio para personas con Medicare</h3>
+  <p class="legal" style="margin-bottom:15px"><strong>Esto NO es un seguro suplementario de Medicare.</strong> Algunos servicios de salud pagados por Medicare también pueden activar el pago de beneficios de estas pólizas. Este seguro paga una cantidad fija, sin importar sus gastos, si usted cumple las condiciones de la póliza. <strong>No paga sus deducibles ni coaseguros de Medicare y no sustituye un seguro suplementario de Medicare.</strong> Antes de comprar, revise la cobertura de todas las pólizas de salud que ya tiene. Para más información, consulte la <em>Guía de Seguro de Salud para Personas con Medicare</em>, disponible con la compañía, o comuníquese con el departamento de seguros de su estado.</p>`:""}
+  <h3>Lea su póliza cuidadosamente</h3>
+  <div class="legal">
+    <p>Este documento es un <strong>resumen informativo preparado por su agente autorizado</strong> para explicarle sus beneficios en lenguaje sencillo. <strong>No es el contrato de seguro</strong> y no modifica ninguno de sus términos. Únicamente las cláusulas de la póliza emitida por American Income Life Insurance Company determinan los derechos y obligaciones de usted y de la compañía. Si existe cualquier diferencia entre este resumen y su póliza, <strong>prevalece siempre la póliza</strong>.</p>
+    <p>Las cifras mostradas corresponden a los planes y montos indicados en la primera página y suponen que las primas se pagan a tiempo y que la información de la solicitud es completa y veraz. Todas las pólizas contienen limitaciones y exclusiones. La disponibilidad de planes, beneficios y cláusulas adicionales varía por estado. Las primas están sujetas a cambio únicamente sobre una base de clase por estado, nunca de forma individual.</p>
+    <p><strong>American Income Life Insurance Company</strong> · Oficina Ejecutiva: P.O. Box 2608, Waco, Texas 76797 · (254) 761-6400 · www.ailife.com · Atención al cliente: 800-433-3405</p>
+  </div>
+  <div class="ack"><p style="margin:0 0 4px"><strong>Acuse de recibo</strong></p><p style="margin:0">Confirmo que mi agente repasó conmigo este resumen y que se me entregó una copia.</p></div>
+  <div class="sig"><div>Firma — ${esc(CN())} &nbsp;·&nbsp; Fecha</div>${hasB()?`<div>Firma — ${esc(BN())} &nbsp;·&nbsp; Fecha</div>`:""}<div>Firma del agente &nbsp;·&nbsp; Fecha</div></div>
+  <div class="sp"></div>
+  <div class="contact"><div class="cn">${esc(a.name)}</div><div class="cr">${esc(a.title)} · ${esc(a.agency)} · American Income Life</div>
+    <div class="cl">Teléfono &nbsp;·&nbsp; ${a.phone?esc(a.phone):"<em>__________________________</em>"}<br>
+    Correo &nbsp;·&nbsp; ${a.email?esc(a.email):"<em>__________________________</em>"}<br>
+    Número de licencia &nbsp;·&nbsp; ${a.lic?esc(a.lic):"<em>__________________________</em>"}</div></div>
+  <div class="foot"><div>Si algo de este documento no le queda claro, por favor llámeme antes de firmar.</div><div class="pgn">Página ${n} de ${tot}</div></div>
+  </div></div>`;
+}
+
+/* ───── render ───── */
+function readForm(){
+  const c = {
+    aName:$("#aN").value.trim(), aSex:$("#aS").value, aTob:$("#aT").value, aDob:$("#aD").value,
+    bName:$("#bN").value.trim(), bSex:$("#bS").value, bTob:$("#bT").value, bDob:$("#bD").value,
+    kids:Math.max(0, parseInt($("#kids").value||"0",10)||0), state:$("#cState").value.trim()
+  };
+  c.aAge = age(c.aDob); c.bAge = age(c.bDob);
+  c.name = c.aName;
+  S.client = c;
+  $("#aA").value = c.aAge!=="" ? c.aAge+" años" : "";
+  $("#bA").value = c.bAge!=="" ? c.bAge+" años" : "";
+  S.prem = {amt:$("#pAmt").value, mode:$("#pMode").value};
+  S.agent = {name:$("#aName").value.trim()||"—", title:$("#aTitle").value.trim(), agency:$("#aAgency").value.trim(),
+             phone:$("#aPhone").value.trim(), email:$("#aEmail").value.trim(), lic:$("#aLic").value.trim()};
+}
+/* ───── ajuste de páginas ─────
+   Ninguna hoja puede cortarse. Se mide el desbordamiento real y se
+   compacta por escalones. En la portada —que es un resumen— se pueden
+   recortar viñetas, porque cada beneficio aparece completo en su propia
+   página. En las demás NUNCA se quita contenido: solo se compacta. */
+const pgOver = pg => pg.scrollHeight - pg.clientHeight;
+
+function trimTallestCard(cards){
+  let best=null, h=0;
+  cards.querySelectorAll(".card").forEach(c=>{
+    if(c.querySelectorAll("li").length>2 && c.offsetHeight>h){ h=c.offsetHeight; best=c; }
   });
-
-  h+=`<section class="slide"><div class="wrap">
-    <div class="total-hero">
-      <div class="tk">Valor total del ejemplo</div>
-      <div class="tv">${money(famCalc.total)}</div>
-      <div class="ts">La suma de los montos configurados para este ejemplo familiar.</div>
-      <div class="total-breakdown">
-        ${famCalc.items.map(it=>`
-          <div class="total-piece">
-            <small>${safe(it.label)}</small>
-            <b>${money(it.value)}</b>
-            <span>${safe(it.detail)}</span>
-          </div>`).join("")}
-      </div>
-    </div>
-  </div></section>`;
-
-  h+=`<section class="slide"><div class="wrap weekly-hero">
-    <div class="wk-label">El valor de proteger a la familia, visto por persona</div>
-    <div class="wk-value">${money2(wpp)}</div>
-    <div class="wk-sub">por persona · por semana</div>
-    <div class="wk-family">${famCalc.members} personas incluidas en la división</div>
-
-    <div class="weekly-compare">
-      <div class="weekly-box">
-        <div class="wb-num">${money2(wpp)}</div>
-        <div class="wb-copy">valor semanal por persona para todos los beneficios que acabamos de revisar</div>
-      </div>
-      <div class="weekly-eq">≈</div>
-      <div class="weekly-box">
-        <div class="wb-num">${cmp.toFixed(1)}×</div>
-        <div class="wb-copy">${safe(s.compareLabel)} con un valor de ${money2(s.compareValue)} cada una</div>
-      </div>
-    </div>
-
-    <div class="weekly-message">
-      Por aproximadamente ${money2(wpp)} a la semana por persona, la familia mantiene el conjunto de beneficios que acabamos de revisar.
-    </div>
-  </div></section>`;
-
-  const stkRows=[["Hospitalización familiar",stk.hosp],["Gastos finales",stk.final],["Protector de ingresos",stk.ing],["Muerte accidental (padres)",stk.acc],["Cobertura niños",stk.ninos]];
-  const stkTotal=stkRows.reduce((a,r)=>a+r[1],0),stkPers=4;
-  h+=`<section class="slide"><div class="wrap">
-    <div class="kicker">Stack de valor familiar</div>
-    <h2 class="title" style="font-size:clamp(34px,4.5vw,58px)">Todo esto, <span class="warm">por solo ${money2(stk.mensual)}/mes</span></h2>
-    <div class="total-breakdown">
-      ${stkRows.map(r=>`<div class="total-piece"><small>${r[0]}</small><b>${money(r[1])}</b></div>`).join("")}
-      <div class="total-piece"><small>Protección total</small><b>${money(stkTotal)}</b></div>
-    </div>
-    <p class="lead">${money2(stk.mensual/stkPers)} por persona &middot; ${money2(stk.mensual/stkPers/4)} por semana por persona</p>
-  </div></section>`;
-
-  h+=`<section class="slide"><div class="wrap">
-    <div class="kicker">Su inversión total</div>
-    <h2 class="title">${money2(s.premium)} <span class="warm">/ ${safe(s.mode)}</span></h2>
-    <p class="lead">Incluye los beneficios seleccionados que acabamos de revisar para la familia.</p>
-    <div class="p-metrics">
-      <div class="p-metric">
-        <div class="mk">Personas incluidas en la división</div>
-        <div class="mv">${famCalc.members}</div>
-        <div class="md">Adultos e hijos. Las mascotas y el beneficiario no se incluyen en esta división.</div>
-      </div>
-      <div class="p-metric">
-        <div class="mk">Por persona / semana</div>
-        <div class="mv">${money2(wpp)}</div>
-        <div class="md">La misma inversión expresada de una forma más fácil de comparar.</div>
-      </div>
-    </div>
-  </div></section>
-
-  <section class="slide"><div class="wrap">
-    <div class="closing-hero">
-      <div class="kicker" style="color:#F2C28C">El siguiente paso</div>
-      <h2 class="closing-title">¿Están listos para darle <span>valor de protección</span> a ustedes y a las personas que aman?</h2>
-      <p class="closing-sub">Ya vimos qué beneficios tienen disponibles, qué representan para la familia y cuál es su valor semanal por persona.</p>
-      <div class="p-note" style="color:#BFD0D8;margin-top:28px">
-        Presentado por ${safe(s.agent)} · ${safe(s.agency)}${s.license ? ` · Lic. ${safe(s.license)}` : ""}${s.phone ? ` · ${safe(s.phone)}` : ""}
-      </div>
-    </div>
-  </div></section>`;
-
-  $("pStage").innerHTML=h;
-  $("pClient").textContent=fam;
-  slides=[...document.querySelectorAll(".slide")];
-  idx=0;
-  buildDots();
-  show(0);
+  if(!best) return false;
+  best.querySelector("li:last-child").remove();
+  return true;
 }
-function buildDots(){
-  $("dots").innerHTML=slides.map((_,i)=>`<span class="dot${i===0?" on":""}" data-i="${i}"></span>`).join("");
-  document.querySelectorAll(".dot").forEach(d=>d.onclick=()=>show(+d.dataset.i));
+
+function fitCover(pg){
+  if(pgOver(pg)<=0) return true;
+  const cards = pg.querySelector(".cards"), client = pg.querySelector(".client");
+  const steps = [
+    ()=> cards && cards.classList.add("c3"),
+    ()=> client && client.classList.add("tight"),
+    ()=> cards && cards.classList.add("tight"),
+    ()=> { const g = pg.querySelector(".gnote"); if(g) g.remove(); },
+    ()=> pg.classList.add("compact")
+  ];
+  for(const s of steps){ s(); if(pgOver(pg)<=0) return true; }
+  for(let i=0; i<60 && pgOver(pg)>0; i++){ if(!cards || !trimTallestCard(cards)) break; }
+  if(pgOver(pg)>0 && cards) cards.classList.add("tiny");
+  return pgOver(pg)<=0;
 }
-function show(i){
-  idx=Math.max(0,Math.min(slides.length-1,i));
-  slides.forEach((s,n)=>s.classList.toggle("on",n===idx));
-  document.querySelectorAll(".dot").forEach((d,n)=>d.classList.toggle("on",n===idx));
-  $("prev").disabled=idx===0;$("next").textContent=idx===slides.length-1?"Finalizar":"Siguiente →";
+
+function fitPages(){
+  const pgs = Array.from($("#doc").querySelectorAll(".pg"));
+  const malas = [];
+  pgs.forEach((pg,i)=>{
+    const ok = i===0 ? fitCover(pg) : (pgOver(pg)<=0 || (pg.classList.add("compact"), pgOver(pg)<=0));
+    if(!ok) malas.push(i+1);
+  });
+  $("#fitMsg").textContent = malas.length
+    ? `Revise ${malas.length===1?"la página":"las páginas"} ${malas.join(", ")}: no cabe todo.`
+    : "";
 }
-function openPres(){buildPresentation();$("pres").classList.add("on");document.body.style.overflow="hidden"}
-function closePres(){$("pres").classList.remove("on");document.body.style.overflow="";if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
-$("presentBtn").onclick=openPres;$("closePres").onclick=closePres;$("prev").onclick=()=>show(idx-1);
-$("next").onclick=()=>idx===slides.length-1?closePres():show(idx+1);
-document.addEventListener("keydown",e=>{
-  if(!$("pres").classList.contains("on"))return;
-  if(e.key==="ArrowRight"||e.key===" "){e.preventDefault();show(idx+1)}
-  if(e.key==="ArrowLeft"){e.preventDefault();show(idx-1)}
-  if(e.key.toLowerCase()==="f"){e.preventDefault();if(!document.fullscreenElement)$("pres").requestFullscreen?.();else document.exitFullscreen?.()}
+
+function render(){
+  readForm();
+  const M=S.mods, pages=[pageCover];
+  if(M.wl.on) pages.push(pageWL);
+  if(M.wl.on && M.wl.chr) pages.push(pageKids);
+  if(M.hs.on && hsKids().length) pages.push(pageHS);
+  if(M.term.on) pages.push(pageTerm);
+  if(M.a71.on) pages.push(pageA71);
+  if(M.h34.on) pages.push(pageH34);
+  if(M.c20.on||M.c10.on) pages.push(pageCancer);
+  if(M.ci.on) pages.push(pageCI);
+  if(M.a74.on) pages.push(pageA74);
+  pages.push(pageStack, pageValues, pageLegal);
+  const tot=pages.length;
+  $("#doc").innerHTML = pages.map((fn,i)=>fn(i+1,tot)).join("");
+  $("#pgCount").textContent = tot + " páginas";
+  fitPages();
+}
+
+/* ───── datos del agente ───── */
+const AK=["aName","aTitle","aAgency","aPhone","aEmail","aLic"];
+function loadAgent(){ try{ const r=localStorage.getItem("ail_agent"); if(!r)return; const d=JSON.parse(r); AK.forEach(k=>{ if(d[k]!=null) $("#"+k).value=d[k]; }); }catch(e){} }
+function saveAgent(){
+  try{ const d={}; AK.forEach(k=>d[k]=$("#"+k).value); localStorage.setItem("ail_agent",JSON.stringify(d));
+    const b=$("#doSaveAgent"), t=b.textContent; b.textContent="Guardado"; setTimeout(()=>b.textContent=t,1400);
+  }catch(e){ alert("Este navegador no permite guardar datos. Escriba sus datos en cada cotización."); }
+}
+
+/* ───── arranque ───── */
+buildMods(); loadAgent();
+$("#mods").addEventListener("change", onRailChange);
+$("#mods").addEventListener("input", e=>{ if(e.target.dataset.mod) onRailChange(e); });
+$("#mods").addEventListener("click", e=>{
+  const addb = e.target.closest("[data-addkid]");
+  if(addb){
+    S.mods[addb.dataset.addkid].kids.push({name:"", dob:"", amt:10000});
+    buildMods(); render();
+    const ins = document.querySelectorAll(`[data-mod="${addb.dataset.addkid}"][data-kf="name"]`);
+    if(ins.length) ins[ins.length-1].focus();
+    return;
+  }
+  const delb = e.target.closest("[data-delkid]");
+  if(delb){ S.mods[delb.dataset.delkid].kids.splice(+delb.dataset.i,1); buildMods(); render(); return; }
+  const b = e.target.closest("[data-scope]"); if(!b) return;
+  S.mods[b.dataset.scope].scope = b.dataset.v;
+  b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x===b));
+  render();
 });
-$("resetBtn").onclick=()=>location.reload();
+["#aN","#aS","#aT","#aD","#bN","#bS","#bT","#bD","#kids","#cState","#pAmt","#pMode","#aName","#aTitle","#aAgency","#aPhone","#aEmail","#aLic"]
+  .forEach(s=>{ $(s).addEventListener("input",render); $(s).addEventListener("change",render); });
+document.querySelectorAll("[data-stk]").forEach(el=>{
+  el.addEventListener("input",()=>{ S.stk[el.dataset.stk]=el.value; render(); });
+  el.addEventListener("change",()=>{ S.stk[el.dataset.stk]=el.value; render(); });
+});
+/* ───── exportación ───── */
+const msg = t => { $("#dlMsg").textContent = t||""; };
+const fileBase = () => `Ilustracion AIL - ${(S.client.aName||"Cliente").replace(/[^\p{L}\p{N} .-]/gu,"").trim()||"Cliente"}`;
+
+async function getDownloads(){
+  try{ return (window.claude && claude.use) ? await claude.use("downloads") : null; }catch(e){ return null; }
+}
+function dlError(e){
+  const c = e && e.code;
+  if(c==="declined") return msg("");
+  if(c==="rate_limited") return msg("Hay otra descarga en proceso. Intente de nuevo en un momento.");
+  msg("No se pudo descargar aquí. Use «Versión para imprimir» o abra la página en su navegador.");
+}
+
+async function exportPDF(){
+  const btn = $("#doPdf"), label = btn.textContent;
+  if(!window.html2canvas || !window.jspdf){
+    msg("El generador de PDF aún no termina de cargar. Espere unos segundos, o use «Versión para imprimir», que no lo necesita.");
+    return;
+  }
+  const dl = await getDownloads();
+  if(!dl){ msg("Elija «Guardar como PDF» en el diálogo de impresión."); try{ window.print(); }catch(e){} return; }
+  btn.disabled = true; msg("");
+  document.body.classList.add("exporting");
+  try{
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    const pages = Array.from(document.querySelectorAll(".pg"));
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({unit:"in", format:"letter", orientation:"portrait", compress:true});
+    for(let i=0;i<pages.length;i++){
+      btn.textContent = `Generando ${i+1} de ${pages.length}…`;
+      const canvas = await html2canvas(pages[i], {scale:2.5, backgroundColor:"#ffffff", useCORS:true, logging:false, windowWidth:pages[i].scrollWidth});
+      if(i) pdf.addPage();
+      pdf.addImage(canvas.toDataURL("image/jpeg",0.92), "JPEG", 0, 0, 8.5, 11, undefined, "FAST");
+    }
+    btn.textContent = "Guardando…";
+    await dl.save({filename:`${fileBase()}.pdf`, data:pdf.output("blob")});
+    msg("PDF descargado.");
+  }catch(e){ dlError(e); }
+  finally{ document.body.classList.remove("exporting"); btn.disabled=false; btn.textContent=label; }
+}
+
+function buildStandalone(){
+  const css = Array.from(document.querySelectorAll("style")).map(s=>s.textContent).join("\n");
+  const fonts = document.querySelector('link[href*="fonts.googleapis"]');
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<title>${esc(fileBase())}</title>${fonts?fonts.outerHTML:""}
+<style>${css}
+body{background:#fff}
+.shell{display:block}.rail,.stage-bar{display:none}.stage{padding:0}
+.doc{width:auto;gap:0;margin:0}
+.pg{box-shadow:none;page-break-after:always}.pg:last-child{page-break-after:auto}
+</style></head><body><div class="stage"><div class="doc">${$("#doc").innerHTML}</div></div>
+<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},600)})<\/script>
+</body></html>`;
+}
+
+async function exportHTML(){
+  const dl = await getDownloads();
+  if(!dl){ msg("Elija «Guardar como PDF» en el diálogo de impresión."); try{ window.print(); }catch(e){} return; }
+  try{
+    await dl.save({filename:`${fileBase()}.html`, data:buildStandalone()});
+    msg("Archivo descargado. Ábralo y aparecerá el diálogo para guardar como PDF.");
+  }catch(e){ dlError(e); }
+}
+
+$("#doPdf").addEventListener("click", exportPDF);
+$("#doHtml").addEventListener("click", exportHTML);
+$("#doSaveAgent").addEventListener("click", saveAgent);
+$("#doReset").addEventListener("click", ()=>{
+  if(!confirm("¿Limpiar los datos del cliente y las coberturas? Sus datos de agente se conservan.")) return;
+  ["#aN","#aD","#bN","#bD","#cState","#pAmt"].forEach(s=>$(s).value="");
+  $("#aS").selectedIndex=0; $("#aT").selectedIndex=0; $("#bS").selectedIndex=0; $("#bT").selectedIndex=0; $("#kids").value="0";
+  MODULES.forEach(m=>{ S.mods[m.id]={on:m.on}; if(m.scope) S.mods[m.id].scope=m.scope;
+    m.fields.forEach(f=>{ if(f.t==="head") return; if(f.t==="kidlist"){ S.mods[m.id].kids=[]; return; } S.mods[m.id][f.k]=f.v; if(f.sub) S.mods[m.id][f.sub.k]=f.sub.v; }); });
+  buildMods(); render(); $("#aN").focus();
+});
+render();
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>render());
 </script>
-</body>
-</html>
