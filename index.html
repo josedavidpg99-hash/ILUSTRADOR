@@ -1,81 +1,6 @@
 <title>Ilustrador AIL</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-/* ===== presentación tipo PowerPoint ===== */
-let slides=[], idx=0;
-const first = n => String(n||"").trim().split(/\s+/)[0] || "";
-const famName = () => [first(S.client.aName), first(S.client.bName)].filter(Boolean).join(" y ") || "Tu familia";
-function buildPresentation(){
-  const cards=coverCards(), fam=famName(), ag=S.agent;
-  const t=S.stk,
-    rows=[["Hospitalización familiar",+t.hosp||0],["Gastos finales",+t.final||0],["Protector de ingresos",+t.ing||0],["Muerte accidental (padres)",+t.acc||0],["Cobertura niños",+t.ninos||0]],
-    stkTotal=rows.reduce((a,r)=>a+r[1],0), pers=4, men=+t.mensual||0;
-  let h=`
-  <section class="slide on"><div class="wrap">
-    <div class="kicker">Resumen de beneficios</div>
-    <h1 class="title">Su protección,<br><span class="warm">explicada en palabras sencillas</span></h1>
-    <p class="lead">Preparado especialmente para ${esc(fam)}. Vamos a revisar, uno por uno, los beneficios seleccionados.</p>
-    <div class="plan-grid">${cards.length?cards.map(c=>`
-      <div class="plan"><div class="kicker" style="margin:0 0 5px;font-size:9px">${esc(c.kick)}</div>
-      <h3>${esc(c.name)}</h3><div class="form">${esc(c.form)}</div>
-      <ul>${c.li.slice(0,3).map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join(""):`<div class="plan"><h3>No hay beneficios seleccionados</h3></div>`}
-    </div>
-  </div></section>`;
-  cards.forEach(c=>{
-    h+=`<section class="slide"><div class="wrap focus">
-      <div class="focusbox"><div class="fk">${esc(c.form)}</div><div class="fn">${esc(c.name)}</div></div>
-      <div><div class="kicker">${esc(c.kick)}</div>
-        <h2 class="title" style="font-size:clamp(38px,5vw,68px)">${esc(c.name)}</h2>
-        <div class="benefits">${c.li.map(x=>`<div class="benefit"><span class="check">•</span><span>${x}</span></div>`).join("")}</div>
-      </div>
-    </div></section>`;
-  });
-  h+=`<section class="slide"><div class="wrap">
-    <div class="kicker">Stack de valor familiar</div>
-    <h2 class="title" style="font-size:clamp(34px,4.5vw,58px)">Todo esto, <span class="warm">por solo ${money2(men)}/mes</span></h2>
-    <div class="plan-grid">
-      ${rows.map(r=>`<div class="plan"><div class="kicker" style="margin:0 0 5px;font-size:9px">Cobertura</div><h3>${money(r[1])}</h3><div class="form">${r[0]}</div></div>`).join("")}
-      <div class="plan"><div class="kicker" style="margin:0 0 5px;font-size:9px">Total</div><h3>${money(stkTotal)}</h3><div class="form">Protección total</div></div>
-    </div>
-    <p class="lead">${money2(men/pers)} por persona · ${money2(men/pers/4)} por semana por persona</p>
-  </div></section>`;
-  h+=`<section class="slide"><div class="wrap">
-    <div class="kicker">Su inversión total</div>
-    <div class="premium"><div class="amount">${money2(S.prem.amt)}</div><div class="mode">/ ${esc(S.prem.mode)}</div></div>
-    <p class="lead">Un solo pago, todas sus coberturas al día. El mismo costo cada mes, sin aumentos por edad.</p>
-  </div></section>`;
-  h+=`<section class="slide"><div class="wrap"><div class="final">
-    <div class="kicker" style="color:#F2C28C">El siguiente paso</div>
-    <h2 class="title">¿Están listos para darle <span class="warm">valor de protección</span> a su familia?</h2>
-    <div class="finalq">La decisión de hoy es la tranquilidad de mañana.</div>
-    <div class="p-note" style="color:#BFD0D8">Presentado por ${esc(ag.name)}${ag.title?` · ${esc(ag.title)}`:""}${ag.agency?` · ${esc(ag.agency)}`:""}${ag.phone?` · ${esc(ag.phone)}`:""}</div>
-  </div></div></section>`;
-  $("#pStage").innerHTML=h;
-  $("#pClient").textContent=fam;
-  slides=[...document.querySelectorAll(".slide")];
-  idx=0; buildDots(); show(0);
-}
-function buildDots(){
-  $("#dots").innerHTML=slides.map((_,i)=>`<span class="dot${i===0?" on":""}" data-i="${i}"></span>`).join("");
-  document.querySelectorAll(".dot").forEach(d=>d.onclick=()=>show(+d.dataset.i));
-}
-function show(i){
-  idx=Math.max(0,Math.min(slides.length-1,i));
-  slides.forEach((s,n)=>s.classList.toggle("on",n===idx));
-  document.querySelectorAll(".dot").forEach((d,n)=>d.classList.toggle("on",n===idx));
-  $("#prev").disabled=idx===0;$("#next").textContent=idx===slides.length-1?"Finalizar":"Siguiente →";
-}
-function openPres(){buildPresentation();$("#pres").classList.add("on");document.body.style.overflow="hidden"}
-function closePres(){$("#pres").classList.remove("on");document.body.style.overflow="";if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
-$("#presentBtn").onclick=openPres;$("#closePres").onclick=closePres;
-$("#prev").onclick=()=>show(idx-1);$("#next").onclick=()=>idx===slides.length-1?closePres():show(idx+1);
-document.addEventListener("keydown",e=>{
-  if(!$("#pres").classList.contains("on"))return;
-  if(e.key==="ArrowRight"||e.key===" "){e.preventDefault();show(idx+1)}
-  if(e.key==="ArrowLeft"){e.preventDefault();show(idx-1)}
-  if(e.key.toLowerCase()==="f"){e.preventDefault();if(!document.fullscreenElement)$("#pres").requestFullscreen?.();else document.exitFullscreen?.()}
-});
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
 <style>
 :root{
@@ -1276,4 +1201,78 @@ $("#doReset").addEventListener("click", ()=>{
 });
 render();
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>render());
+/* ===== presentación tipo PowerPoint ===== */
+let slides=[], idx=0;
+const first = n => String(n||"").trim().split(/\s+/)[0] || "";
+const famName = () => [first(S.client.aName), first(S.client.bName)].filter(Boolean).join(" y ") || "Tu familia";
+function buildPresentation(){
+  const cards=coverCards(), fam=famName(), ag=S.agent;
+  const t=S.stk,
+    rows=[["Hospitalización familiar",+t.hosp||0],["Gastos finales",+t.final||0],["Protector de ingresos",+t.ing||0],["Muerte accidental (padres)",+t.acc||0],["Cobertura niños",+t.ninos||0]],
+    stkTotal=rows.reduce((a,r)=>a+r[1],0), pers=4, men=+t.mensual||0;
+  let h=`
+  <section class="slide on"><div class="wrap">
+    <div class="kicker">Resumen de beneficios</div>
+    <h1 class="title">Su protección,<br><span class="warm">explicada en palabras sencillas</span></h1>
+    <p class="lead">Preparado especialmente para ${esc(fam)}. Vamos a revisar, uno por uno, los beneficios seleccionados.</p>
+    <div class="plan-grid">${cards.length?cards.map(c=>`
+      <div class="plan"><div class="kicker" style="margin:0 0 5px;font-size:9px">${esc(c.kick)}</div>
+      <h3>${esc(c.name)}</h3><div class="form">${esc(c.form)}</div>
+      <ul>${c.li.slice(0,3).map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join(""):`<div class="plan"><h3>No hay beneficios seleccionados</h3></div>`}
+    </div>
+  </div></section>`;
+  cards.forEach(c=>{
+    h+=`<section class="slide"><div class="wrap focus">
+      <div class="focusbox"><div class="fk">${esc(c.form)}</div><div class="fn">${esc(c.name)}</div></div>
+      <div><div class="kicker">${esc(c.kick)}</div>
+        <h2 class="title" style="font-size:clamp(38px,5vw,68px)">${esc(c.name)}</h2>
+        <div class="benefits">${c.li.map(x=>`<div class="benefit"><span class="check">•</span><span>${x}</span></div>`).join("")}</div>
+      </div>
+    </div></section>`;
+  });
+  h+=`<section class="slide"><div class="wrap">
+    <div class="kicker">Stack de valor familiar</div>
+    <h2 class="title" style="font-size:clamp(34px,4.5vw,58px)">Todo esto, <span class="warm">por solo ${money2(men)}/mes</span></h2>
+    <div class="plan-grid">
+      ${rows.map(r=>`<div class="plan"><div class="kicker" style="margin:0 0 5px;font-size:9px">Cobertura</div><h3>${money(r[1])}</h3><div class="form">${r[0]}</div></div>`).join("")}
+      <div class="plan"><div class="kicker" style="margin:0 0 5px;font-size:9px">Total</div><h3>${money(stkTotal)}</h3><div class="form">Protección total</div></div>
+    </div>
+    <p class="lead">${money2(men/pers)} por persona · ${money2(men/pers/4)} por semana por persona</p>
+  </div></section>`;
+  h+=`<section class="slide"><div class="wrap">
+    <div class="kicker">Su inversión total</div>
+    <div class="premium"><div class="amount">${money2(S.prem.amt)}</div><div class="mode">/ ${esc(S.prem.mode)}</div></div>
+    <p class="lead">Un solo pago, todas sus coberturas al día. El mismo costo cada mes, sin aumentos por edad.</p>
+  </div></section>`;
+  h+=`<section class="slide"><div class="wrap"><div class="final">
+    <div class="kicker" style="color:#F2C28C">El siguiente paso</div>
+    <h2 class="title">¿Están listos para darle <span class="warm">valor de protección</span> a su familia?</h2>
+    <div class="finalq">La decisión de hoy es la tranquilidad de mañana.</div>
+    <div class="p-note" style="color:#BFD0D8">Presentado por ${esc(ag.name)}${ag.title?` · ${esc(ag.title)}`:""}${ag.agency?` · ${esc(ag.agency)}`:""}${ag.phone?` · ${esc(ag.phone)}`:""}</div>
+  </div></div></section>`;
+  $("#pStage").innerHTML=h;
+  $("#pClient").textContent=fam;
+  slides=[...document.querySelectorAll(".slide")];
+  idx=0; buildDots(); show(0);
+}
+function buildDots(){
+  $("#dots").innerHTML=slides.map((_,i)=>`<span class="dot${i===0?" on":""}" data-i="${i}"></span>`).join("");
+  document.querySelectorAll(".dot").forEach(d=>d.onclick=()=>show(+d.dataset.i));
+}
+function show(i){
+  idx=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,n)=>s.classList.toggle("on",n===idx));
+  document.querySelectorAll(".dot").forEach((d,n)=>d.classList.toggle("on",n===idx));
+  $("#prev").disabled=idx===0;$("#next").textContent=idx===slides.length-1?"Finalizar":"Siguiente →";
+}
+function openPres(){buildPresentation();$("#pres").classList.add("on");document.body.style.overflow="hidden"}
+function closePres(){$("#pres").classList.remove("on");document.body.style.overflow="";if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
+$("#presentBtn").onclick=openPres;$("#closePres").onclick=closePres;
+$("#prev").onclick=()=>show(idx-1);$("#next").onclick=()=>idx===slides.length-1?closePres():show(idx+1);
+document.addEventListener("keydown",e=>{
+  if(!$("#pres").classList.contains("on"))return;
+  if(e.key==="ArrowRight"||e.key===" "){e.preventDefault();show(idx+1)}
+  if(e.key==="ArrowLeft"){e.preventDefault();show(idx-1)}
+  if(e.key.toLowerCase()==="f"){e.preventDefault();if(!document.fullscreenElement)$("#pres").requestFullscreen?.();else document.exitFullscreen?.()}
+});
 </script>
