@@ -100,6 +100,12 @@ textarea{resize:vertical;min-height:54px}
 .p-note{font-size:12px;color:#85939A;line-height:1.5;margin-top:18px}
 .p-foot{height:68px;background:#fff;border-top:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:10px;padding:10px 22px}
 .p-foot .help{margin:auto;color:#8B989E;font-size:12px}.pbtn{border:1px solid #D6DFE3;background:#fff;color:#315365;border-radius:11px;padding:10px 14px;font-weight:800;cursor:pointer}.pbtn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.stackval{margin-top:18px;border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--soft)}
+.stk-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.stk-row:last-child{border-bottom:none}
+.stk-row.total{font-weight:800;font-size:16px}
+.stk-reveal{text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.guion p{font-size:13px;margin:8px 0;line-height:1.55;color:#33414b}
 @media(max-width:900px){.shell{grid-template-columns:1fr}.rail{height:auto;position:static}.stage{padding:12px}.doc{transform-origin:top left}.cards,.clientbox,.focus{grid-template-columns:1fr}.slide{align-items:flex-start;padding:24px 18px}.p-client,.help{display:none}}
 @media print{.rail,.preview-top{display:none}.shell{display:block}.stage{padding:0}.doc{box-shadow:none}}
 
@@ -409,6 +415,32 @@ textarea{resize:vertical;min-height:54px}
 
       <div style="font-size:10px;color:#7A8993;margin-top:6px">La comparación usa el valor de referencia que ingreses y no representa el valor de un producto específico.</div>
     </section>
+
+    <section class="sect">
+      <h3>Stack de valor familiar</h3>
+      <div class="grid g2">
+        <label>Hospitalización familiar ($)<input id="stk-hosp" type="number" value="584000"></label>
+        <label>Gastos finales ($)<input id="stk-final" type="number" value="40000"></label>
+      </div>
+      <div class="grid g2" style="margin-top:8px">
+        <label>Protector de ingresos ($)<input id="stk-ing" type="number" value="60000"></label>
+        <label>Muerte accidental padres ($)<input id="stk-acc" type="number" value="400000"></label>
+      </div>
+      <div class="grid g2" style="margin-top:8px">
+        <label>Cobertura niños ($)<input id="stk-ninos" type="number" value="40000"></label>
+        <label>Costo mensual real ($)<input id="stk-mensual" type="number" step="0.01" value="92.83"></label>
+      </div>
+    </section>
+
+    <section class="sect">
+      <h3>Guion de revelación</h3>
+      <div class="guion">
+        <p><b>1. Anclaje:</b> "¿Cuánto paga de seguro de carro al mes?" (≈ $270/mes) — eso solo protege el carro.</p>
+        <p><b>2. Expectativa:</b> "La mayoría piensa que esto cuesta $200–$300 al mes."</p>
+        <p><b>3. Revelación:</b> muestra el número grande de abajo y desglósalo por persona y por semana.</p>
+        <p><b>4. Cierre suave:</b> "¿Quiere ser tomado en cuenta para el programa?" — y silencio.</p>
+      </div>
+    </section>
   </div>
 
   <div class="rail-foot">
@@ -446,6 +478,10 @@ textarea{resize:vertical;min-height:54px}
           <div class="vbig" id="pdfFamilyTotal" style="font-size:34px">$0</div>
           <div class="vsmall">Suma ilustrativa de los beneficios cuantificables seleccionados. No todos necesariamente pueden pagarse simultáneamente.</div>
         </div>
+      </div>
+      <div class="stackval">
+        <div class="vlabel">STACK DE VALOR FAMILIAR</div>
+        <div id="pdfStack"></div>
       </div>
       <div class="disclaimer">Este documento es un resumen ilustrativo y no constituye una protección ni una garantía de cobertura. Los beneficios, primas, elegibilidad, exclusiones, limitaciones y condiciones reales dependen de la solicitud, suscripción y documentos oficiales emitidos por la compañía.</div>
     </div>
@@ -503,6 +539,8 @@ function state(){
     dailyBenefit:Number(val("dailyBenefit")||0),
     compareValue:Number(val("compareValue")||7),
     compareLabel:val("compareLabel")||"una comida rápida sencilla",
+    stk:{hosp:Number(val("stk-hosp")||0),final:Number(val("stk-final")||0),ing:Number(val("stk-ing")||0),
+         acc:Number(val("stk-acc")||0),ninos:Number(val("stk-ninos")||0),mensual:Number(val("stk-mensual")||0)},
     beneficiary:val("beneficiary"),
     kidNames:[...document.querySelectorAll("#kidNames input")].map(x=>x.value.trim()).filter(Boolean),
     petNames:[...document.querySelectorAll("#petNames input")].map(x=>x.value.trim()).filter(Boolean)
@@ -699,6 +737,14 @@ function render(){
   const cmp=s.compareValue>0 ? wpp/s.compareValue : 0;
   $("pdfWeeklyDesc").textContent=`${famCalc.members} miembros · equivale aproximadamente a ${cmp.toFixed(1)} × ${s.compareLabel} de ${money2(s.compareValue)} por persona a la semana.`;
   $("pdfFamilyTotal").textContent=money(famCalc.total);
+  const stk=s.stk,
+    stkRows=[["Hospitalización familiar",stk.hosp],["Gastos finales",stk.final],["Protector de ingresos",stk.ing],["Muerte accidental (padres)",stk.acc],["Cobertura niños",stk.ninos]],
+    stkTotal=stkRows.reduce((a,r)=>a+r[1],0),stkPers=4;
+  $("pdfStack").innerHTML=
+    stkRows.map(r=>`<div class="stk-row"><span>${r[0]}</span><b>${money(r[1])}</b></div>`).join("")+
+    `<div class="stk-row total"><span>Protección total</span><b>${money(stkTotal)}</b></div>
+     <div class="stk-reveal"><div class="vlabel">TODO ESTO POR SOLO</div><div class="vbig">${money2(stk.mensual)}/mes</div>
+     <div class="vsmall">${money2(stk.mensual/stkPers)} por persona &middot; ${money2(stk.mensual/stkPers/4)}/semana por persona</div></div>`;
   $("pdfCards").innerHTML=cards.length?cards.map(c=>`
     <div class="card ${c.life?"life":""}">
       <div class="kick">${c.kick}</div><h3>${c.name}</h3><div class="form">${c.form}</div>
@@ -763,6 +809,7 @@ function peopleHTML(s){
 }
 function buildPresentation(){
   const s=state(),cards=coverCards(),fam=[first(s.a.name),first(s.b.name)].filter(Boolean).join(" y ")||"Tu familia";
+  const stk=s.stk;
   const famCalc=familyProtectionBreakdown(s,cards);
   const wpp=weeklyPerPerson(s);
   const cmp=s.compareValue>0 ? wpp/s.compareValue : 0;
@@ -842,6 +889,18 @@ function buildPresentation(){
     <div class="weekly-message">
       Por aproximadamente ${money2(wpp)} a la semana por persona, la familia mantiene el conjunto de beneficios que acabamos de revisar.
     </div>
+  </div></section>`;
+
+  const stkRows=[["Hospitalización familiar",stk.hosp],["Gastos finales",stk.final],["Protector de ingresos",stk.ing],["Muerte accidental (padres)",stk.acc],["Cobertura niños",stk.ninos]];
+  const stkTotal=stkRows.reduce((a,r)=>a+r[1],0),stkPers=4;
+  h+=`<section class="slide"><div class="wrap">
+    <div class="kicker">Stack de valor familiar</div>
+    <h2 class="title" style="font-size:clamp(34px,4.5vw,58px)">Todo esto, <span class="warm">por solo ${money2(stk.mensual)}/mes</span></h2>
+    <div class="total-breakdown">
+      ${stkRows.map(r=>`<div class="total-piece"><small>${r[0]}</small><b>${money(r[1])}</b></div>`).join("")}
+      <div class="total-piece"><small>Protección total</small><b>${money(stkTotal)}</b></div>
+    </div>
+    <p class="lead">${money2(stk.mensual/stkPers)} por persona &middot; ${money2(stk.mensual/stkPers/4)} por semana por persona</p>
   </div></section>`;
 
   h+=`<section class="slide"><div class="wrap">
