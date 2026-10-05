@@ -1,6 +1,81 @@
 <title>Ilustrador AIL</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+/* ===== presentación tipo PowerPoint ===== */
+let slides=[], idx=0;
+const first = n => String(n||"").trim().split(/\s+/)[0] || "";
+const famName = () => [first(S.client.aName), first(S.client.bName)].filter(Boolean).join(" y ") || "Tu familia";
+function buildPresentation(){
+  const cards=coverCards(), fam=famName(), ag=S.agent;
+  const t=S.stk,
+    rows=[["Hospitalización familiar",+t.hosp||0],["Gastos finales",+t.final||0],["Protector de ingresos",+t.ing||0],["Muerte accidental (padres)",+t.acc||0],["Cobertura niños",+t.ninos||0]],
+    stkTotal=rows.reduce((a,r)=>a+r[1],0), pers=4, men=+t.mensual||0;
+  let h=`
+  <section class="slide on"><div class="wrap">
+    <div class="kicker">Resumen de beneficios</div>
+    <h1 class="title">Su protección,<br><span class="warm">explicada en palabras sencillas</span></h1>
+    <p class="lead">Preparado especialmente para ${esc(fam)}. Vamos a revisar, uno por uno, los beneficios seleccionados.</p>
+    <div class="plan-grid">${cards.length?cards.map(c=>`
+      <div class="plan"><div class="kicker" style="margin:0 0 5px;font-size:9px">${esc(c.kick)}</div>
+      <h3>${esc(c.name)}</h3><div class="form">${esc(c.form)}</div>
+      <ul>${c.li.slice(0,3).map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join(""):`<div class="plan"><h3>No hay beneficios seleccionados</h3></div>`}
+    </div>
+  </div></section>`;
+  cards.forEach(c=>{
+    h+=`<section class="slide"><div class="wrap focus">
+      <div class="focusbox"><div class="fk">${esc(c.form)}</div><div class="fn">${esc(c.name)}</div></div>
+      <div><div class="kicker">${esc(c.kick)}</div>
+        <h2 class="title" style="font-size:clamp(38px,5vw,68px)">${esc(c.name)}</h2>
+        <div class="benefits">${c.li.map(x=>`<div class="benefit"><span class="check">•</span><span>${x}</span></div>`).join("")}</div>
+      </div>
+    </div></section>`;
+  });
+  h+=`<section class="slide"><div class="wrap">
+    <div class="kicker">Stack de valor familiar</div>
+    <h2 class="title" style="font-size:clamp(34px,4.5vw,58px)">Todo esto, <span class="warm">por solo ${money2(men)}/mes</span></h2>
+    <div class="plan-grid">
+      ${rows.map(r=>`<div class="plan"><div class="kicker" style="margin:0 0 5px;font-size:9px">Cobertura</div><h3>${money(r[1])}</h3><div class="form">${r[0]}</div></div>`).join("")}
+      <div class="plan"><div class="kicker" style="margin:0 0 5px;font-size:9px">Total</div><h3>${money(stkTotal)}</h3><div class="form">Protección total</div></div>
+    </div>
+    <p class="lead">${money2(men/pers)} por persona · ${money2(men/pers/4)} por semana por persona</p>
+  </div></section>`;
+  h+=`<section class="slide"><div class="wrap">
+    <div class="kicker">Su inversión total</div>
+    <div class="premium"><div class="amount">${money2(S.prem.amt)}</div><div class="mode">/ ${esc(S.prem.mode)}</div></div>
+    <p class="lead">Un solo pago, todas sus coberturas al día. El mismo costo cada mes, sin aumentos por edad.</p>
+  </div></section>`;
+  h+=`<section class="slide"><div class="wrap"><div class="final">
+    <div class="kicker" style="color:#F2C28C">El siguiente paso</div>
+    <h2 class="title">¿Están listos para darle <span class="warm">valor de protección</span> a su familia?</h2>
+    <div class="finalq">La decisión de hoy es la tranquilidad de mañana.</div>
+    <div class="p-note" style="color:#BFD0D8">Presentado por ${esc(ag.name)}${ag.title?` · ${esc(ag.title)}`:""}${ag.agency?` · ${esc(ag.agency)}`:""}${ag.phone?` · ${esc(ag.phone)}`:""}</div>
+  </div></div></section>`;
+  $("#pStage").innerHTML=h;
+  $("#pClient").textContent=fam;
+  slides=[...document.querySelectorAll(".slide")];
+  idx=0; buildDots(); show(0);
+}
+function buildDots(){
+  $("#dots").innerHTML=slides.map((_,i)=>`<span class="dot${i===0?" on":""}" data-i="${i}"></span>`).join("");
+  document.querySelectorAll(".dot").forEach(d=>d.onclick=()=>show(+d.dataset.i));
+}
+function show(i){
+  idx=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,n)=>s.classList.toggle("on",n===idx));
+  document.querySelectorAll(".dot").forEach((d,n)=>d.classList.toggle("on",n===idx));
+  $("#prev").disabled=idx===0;$("#next").textContent=idx===slides.length-1?"Finalizar":"Siguiente →";
+}
+function openPres(){buildPresentation();$("#pres").classList.add("on");document.body.style.overflow="hidden"}
+function closePres(){$("#pres").classList.remove("on");document.body.style.overflow="";if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
+$("#presentBtn").onclick=openPres;$("#closePres").onclick=closePres;
+$("#prev").onclick=()=>show(idx-1);$("#next").onclick=()=>idx===slides.length-1?closePres():show(idx+1);
+document.addEventListener("keydown",e=>{
+  if(!$("#pres").classList.contains("on"))return;
+  if(e.key==="ArrowRight"||e.key===" "){e.preventDefault();show(idx+1)}
+  if(e.key==="ArrowLeft"){e.preventDefault();show(idx-1)}
+  if(e.key.toLowerCase()==="f"){e.preventDefault();if(!document.fullscreenElement)$("#pres").requestFullscreen?.();else document.exitFullscreen?.()}
+});
+</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
 <style>
 :root{
@@ -295,6 +370,46 @@ body.exporting .pg{box-shadow:none !important}
 .rbig{font-size:44px;font-weight:800;color:var(--ink,#1B2A33);margin:6px 0}
 .rsmall{font-size:13px;color:var(--muted,#62727E)}
 .guion p{font-size:13px;margin:8px 0;line-height:1.55;color:#33414b}
+/* ===== modo presentación tipo PowerPoint ===== */
+#pres{display:none;position:fixed;inset:0;z-index:9999;background:#F8F5EF;color:#20303A;--blue:#00558C;--warm:#D68D47}
+#pres.on{display:flex;flex-direction:column}
+.p-top{height:62px;background:rgba(255,255,255,.9);border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center;padding:0 22px;gap:12px}
+.p-brand{font-weight:800;color:#244A60}.p-client{font-size:13px;color:#76868E}
+.dots{display:flex;gap:6px}.dot{width:7px;height:7px;border-radius:20px;background:#CBD6DB;cursor:pointer}.dot.on{width:25px;background:#D68D47}
+.close{border:1px solid #D9E0E3;background:#fff;border-radius:9px;padding:8px 10px;cursor:pointer}
+.p-stage{position:relative;flex:1;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:clamp(26px,5vw,70px);opacity:0;transform:translateX(32px);pointer-events:none;transition:.3s;overflow:auto}
+.slide.on{opacity:1;transform:none;pointer-events:auto}
+.slide:nth-child(odd){background:radial-gradient(circle at 8% 10%,rgba(234,186,128,.20),transparent 29%),#F8F5EF}
+.slide:nth-child(even){background:radial-gradient(circle at 92% 10%,rgba(0,85,140,.08),transparent 28%),#FCFBF8}
+.wrap{width:min(1120px,100%);margin:auto}
+.kicker{text-transform:uppercase;letter-spacing:1.7px;font-weight:800;color:var(--warm);font-size:12px;margin-bottom:12px}
+.title{font:700 clamp(39px,5.4vw,76px)/1.04 "Source Serif 4",Georgia,serif;color:#173D52;margin:0 0 20px;letter-spacing:-1.2px}
+.title .warm{color:var(--warm)}
+.lead{max-width:850px;color:#5E7079;font-size:clamp(17px,2vw,24px);line-height:1.55}
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;margin-top:24px}
+.plan{background:#fff;border:1px solid #E1E5E3;border-radius:21px;padding:21px;position:relative;overflow:hidden}
+.plan:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#6DAA9C}
+.plan h3{font:700 21px "Source Serif 4",Georgia,serif;color:#244A60;margin:4px 0}.plan .form{font-size:12px;color:#859197}
+.plan ul{padding-left:18px;color:#52656F;line-height:1.5;font-size:14px}
+.focus{display:grid;grid-template-columns:.72fr 1.28fr;gap:30px;align-items:center}
+.focusbox{min-height:330px;border-radius:31px;background:linear-gradient(145deg,#173D52,#00558C);color:#fff;padding:32px;display:flex;flex-direction:column;justify-content:flex-end;box-shadow:0 24px 60px rgba(0,85,140,.2)}
+.focusbox .fk{text-transform:uppercase;font-size:10px;letter-spacing:1.5px;opacity:.75}
+.focusbox .fn{font:700 34px/1.08 "Source Serif 4",Georgia,serif;margin-top:5px}
+.benefits{display:grid;gap:11px}.benefit{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid #E5E5DF;border-radius:15px;padding:14px 16px;color:#4D626B}
+.check{flex:none;width:25px;height:25px;border-radius:50%;background:#E6F2EE;color:#237A66;display:grid;place-items:center;font-weight:900}
+.premium{display:flex;align-items:flex-end;gap:15px;margin-top:17px}
+.amount{font:700 clamp(60px,8vw,104px)/.9 "Source Serif 4",Georgia,serif;color:var(--blue);letter-spacing:-2px}
+.mode{padding-bottom:9px;color:#75858C;font-size:17px}
+.final{background:linear-gradient(145deg,#173D52,#244F66);color:#fff;border-radius:34px;padding:clamp(30px,5vw,58px);box-shadow:0 25px 65px rgba(23,61,82,.22)}
+.final .title{color:#fff}.final .lead{color:#D7E3E8}
+.finalq{margin-top:28px;padding:19px 21px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.09);border-radius:17px;font:600 clamp(19px,2vw,26px) "Source Serif 4",Georgia,serif}
+.p-note{font-size:12px;color:#85939A;line-height:1.5;margin-top:18px}
+.p-foot{height:68px;background:#fff;border-top:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:10px;padding:10px 22px}
+.p-foot .help{margin:auto;color:#8B989E;font-size:12px}
+.pbtn{border:1px solid #D6DFE3;background:#fff;color:#315365;border-radius:11px;padding:10px 14px;font-weight:800;cursor:pointer}
+.pbtn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+@media(max-width:900px){.slide{align-items:flex-start;padding:24px 18px}.focus{grid-template-columns:1fr}.p-client,.p-foot .help{display:none}}
 </style>
 
 <div class="shell">
@@ -411,6 +526,7 @@ body.exporting .pg{box-shadow:none !important}
     </div>
 
     <div class="rail-foot">
+      <button class="btn btn-p" id="presentBtn">Presentar al cliente</button>
       <button class="btn btn-p" id="doPdf">Descargar PDF</button>
       <div class="btn-row">
         <button class="btn" id="doHtml" title="Archivo que se abre e imprime en su navegador — calidad vectorial">Versión para imprimir</button>
@@ -431,6 +547,22 @@ body.exporting .pg{box-shadow:none !important}
       <span>En el diálogo de impresión elija <strong>Guardar como PDF</strong></span>
     </div>
     <div class="doc" id="doc"></div>
+  </div>
+</div>
+
+<div id="pres" aria-hidden="true">
+  <div class="p-top">
+    <div class="p-brand">AIL · Protección familiar</div>
+    <div class="p-client" id="pClient"></div>
+    <div class="sp"></div>
+    <div class="dots" id="dots"></div>
+    <button class="close" id="closePres">Cerrar ✕</button>
+  </div>
+  <div class="p-stage" id="pStage"></div>
+  <div class="p-foot">
+    <button class="pbtn" id="prev">← Anterior</button>
+    <div class="help">← → avanzar · F pantalla completa</div>
+    <button class="pbtn primary" id="next">Siguiente →</button>
   </div>
 </div>
 
